@@ -1,19 +1,14 @@
-const CACHE_NAME = "inkflow-v1";
-const APP_SHELL = ["/", "/manifest.webmanifest", "/inkflow-opening/end-frame.png"];
+const CACHE_NAME = "inkflow-vnext-1";
+const APP_SHELL = ["/", "/manifest.webmanifest", "/og.png"];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()),
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
-      )
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((key) => key.startsWith("inkflow-") && key !== CACHE_NAME).map((key) => caches.delete(key))))
       .then(() => self.clients.claim()),
   );
 });
@@ -27,26 +22,18 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put("/", copy));
+          if (response.ok) caches.open(CACHE_NAME).then((cache) => cache.put("/", response.clone()));
           return response;
         })
-        .catch(() => caches.match("/")),
+        .catch(() => caches.match("/").then((cached) => cached || new Response("墨流暂时无法离线打开。", { status: 503 }))),
     );
     return;
   }
 
   event.respondWith(
-    caches.match(event.request).then(
-      (cached) =>
-        cached ||
-        fetch(event.request).then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-          }
-          return response;
-        }),
-    ),
+    caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
+      if (response.ok) caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
+      return response;
+    })),
   );
 });

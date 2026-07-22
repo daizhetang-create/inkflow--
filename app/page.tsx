@@ -1,10 +1,5 @@
-import { FocusApp } from "./FocusApp";
-import { InkflowOpening } from "./InkflowOpening";
+import { FlowRoot } from "./FlowRoot";
 
 export default function Home() {
-  return (
-    <InkflowOpening>
-      <FocusApp />
-    </InkflowOpening>
-  );
+  return <FlowRoot />;
 }

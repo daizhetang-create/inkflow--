@@ -6,22 +6,14 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
-    files: ["app/FocusApp.tsx", "app/InkflowOpening.tsx"],
+    files: ["app/FocusApp.tsx", "app/InkflowOpening.tsx", "app/FlowApp.tsx"],
     rules: {
-      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/set-state-in-effect": "off"
     },
   },
-  // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-    "design/**",
-    "docs/**",
-    "video/**",
-    ".venv/**",
+    ".next/**", "out/**", "build/**", "next-env.d.ts",
+    "design/**", "docs/**", "video/**", ".venv/**"
   ]),
 ]);
 

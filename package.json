@@ -1,10 +1,8 @@
 {
-  "name": "inkflow-focus",
-  "version": "0.1.0",
+  "name": "inkflow-attention-continuity",
+  "version": "0.2.0",
   "private": true,
-  "engines": {
-    "node": ">=22.13.0"
-  },
+  "engines": { "node": ">=22.13.0" },
   "scripts": {
     "dev": "vinext dev",
     "build": "vinext build",
@@ -38,5 +36,5 @@
     "wrangler": "4.92.0"
   },
   "type": "module",
-  "description": "为深度阅读设计的流动专注计时器"
+  "description": "为 AI 等待与工作中断设计的注意力连续性工具"
 }
