@@ -5,7 +5,7 @@
 ## 1. 自动质量门
 
 - `npm run lint`：通过，0 error / 0 warning。
-- `npm test`：生产构建成功；21 项 Node 测试全部通过。
+- `npm test`：生产构建成功；24 项 Node 测试全部通过。
 - 覆盖层：八状态机、规范事件、adapter、schema/storage、SSR、PWA 离线、旧版资产、响应式与隐私合同。
 
 ## 2. 任务书工作流矩阵
