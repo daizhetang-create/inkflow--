@@ -22,7 +22,8 @@
 
 - `7fded0f`：A–I 产品方向；
 - `64e9ca2`：J–T 体验架构和原型；
-- 最终实现 commit：见 `FOUNDER_MORNING_REPORT.md` 完成栏。
+- `8deb7e5`：vNext 产品实现、测试与证据；
+- 最终状态与发布说明：`FOUNDER_MORNING_REPORT.md`。
 
 ## 明确未提交范围
 
