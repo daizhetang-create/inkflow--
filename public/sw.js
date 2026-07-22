@@ -1,5 +1,5 @@
 const CACHE_NAME = "inkflow-v1";
-const APP_SHELL = ["/", "/manifest.webmanifest"];
+const APP_SHELL = ["/", "/manifest.webmanifest", "/inkflow-opening/end-frame.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

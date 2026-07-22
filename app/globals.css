@@ -36,6 +36,89 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+.inkflow-page-content {
+  min-height: 100svh;
+}
+
+.inkflow-page-content:focus {
+  outline: 0;
+}
+
+.inkflow-opening {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow: hidden;
+  background: #f2ecdd;
+  opacity: 1;
+  isolation: isolate;
+  touch-action: manipulation;
+  transition: opacity 300ms linear;
+}
+
+.inkflow-opening.is-fading {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.inkflow-opening__video,
+.inkflow-opening__poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.inkflow-opening__poster {
+  z-index: 1;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.inkflow-opening__video {
+  z-index: 2;
+  display: block;
+  background: transparent;
+  pointer-events: none;
+}
+
+.inkflow-opening__video--transition {
+  z-index: 3;
+}
+
+.inkflow-opening__video.is-visible,
+.inkflow-opening__poster.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.inkflow-opening__entry {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 4;
+  width: 44vmin;
+  max-width: 44vmin;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  outline: 0;
+  background: transparent;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.inkflow-opening__entry:focus-visible {
+  outline: 2px solid rgba(22, 59, 54, 0.72);
+  outline-offset: 7px;
+  box-shadow: 0 0 0 12px rgba(242, 236, 221, 0.3);
+}
+
 button,
 input {
   font: inherit;
@@ -1878,6 +1961,10 @@ kbd {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .inkflow-opening__video {
+    display: none;
+  }
+
   *,
   *::before,
   *::after {
