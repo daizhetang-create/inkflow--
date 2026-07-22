@@ -1,105 +1,94 @@
-# M — 产品状态机与事件模型
+# M｜产品状态机与事件模型
 
-## 状态
+## 1. 八个真实运行状态
 
-| 状态 | 含义 | 允许的主动作 | 界面原则 |
-|---|---|---|---|
-| `Idle` | 没有活动 session | 新建注意力去向、恢复最近 checkpoint | 只显示一个入口与最近一条 |
-| `Intention` | 正在定义去向 | 选择 AI/工作/阅读/冥想，写 intent | 不出现统计与设置墙 |
-| `Active` | 用户在真实任务中 | 开始等待、主动 checkpoint、报告偏航、结束 | 墨流退到边缘 |
-| `Waiting` | Agent/系统处理中或用户手动计时模拟 | 留白、拉取微行动、标记提前完成/失败 | 中段留白，不制造内容流 |
-| `Drift` | 用户主动报告偏航，或仅发现页面曾隐藏（不得等同偏航） | 保留/改变目的，重算下一步 | 不显示失败计数 |
-| `Return` | 完成后正在恢复上下文 | 回忆、揭示 checkpoint、接回第一步 | signature 断线合流 |
-| `Recovery` | 用户主动选择身体/大脑恢复 | 远眺、呼吸、伸展、留白、提前回来 | 低刺激，可随时退出 |
-| `Review` | 第一动作或 session 结束后的轻反馈 | 评估上下文恢复、关闭/继续 | 一题即走 |
+| 状态 | 含义 | 允许的主动作 | 运行时证据 |
+| --- | --- | --- | --- |
+| `idle` | 没有活动流 | 选择场景、开始写意图、主动报告漂移 | `createSession()` 默认值 |
+| `intention` | 正在定义去向 | 编辑目标与下一步、封存 checkpoint | 输入聚焦或场景选择触发 `BEGIN_INTENTION` |
+| `waiting` | 外部任务处理或用户等待 | 选择恢复动作、完成、失败、提前回来 | `checkpointAt` 与可选 `expectedAt` |
+| `recovery` | 主动给身体/大脑一个低刺激间隙 | 完成恢复、继续等待、接收任何结果 | `microActionAt` 与 `microAction` |
+| `drift` | 用户主动报告偏航 | 保留/改变目的、缩小下一步 | 只由 `REPORT_DRIFT` 进入 |
+| `return` | 结果或自救信号已到达 | 一击接回封存动作 | `taskOutcome`、`returnedAt` |
+| `active` | 已回到真实任务 | 完成第一步、再开空档、报告漂移 | `rejoinedAt`、`returnLatencyMs` |
+| `review` | 极短恢复质量复盘 | 完整/部分/丢失/跳过 | `review` 与本地历史 |
 
-## 转换
+`Recovery` 不是 Waiting 的文案别名：用户选择“留白/远眺/伸展/一句判断”时发生真实状态转换；模拟 adapter 在该状态仍继续计时，结果到达会直接进入 Return。
+
+## 2. 主要转换
 
 ```text
-Idle -> Intention -> Active
-Active -> Waiting -> Recovery? -> Return -> Active
-Active -> Drift -> Return -> Active
-Waiting -> Drift -> Return
-Waiting -> Return (manual/adapter/simulation complete)
-Return -> Review -> Active | Idle
-Active -> Review -> Idle
-任意活动态 -> Idle (明确放下/清空当前 session)
+idle -> intention -> waiting -> recovery -> waiting
+                         |          |
+                         +----------+-> return -> active -> review
+
+idle/intention/waiting/recovery/return/active -> drift -> return
+waiting/recovery -> return (complete / failed / early)
+任意状态 -> idle (NEW_SESSION，明确开始下一条流)
+任意状态 -> 同状态 (PAGE_VISIBILITY，不等同 drift)
 ```
 
-## 事件真实性
+非法转换会抛出 `Illegal Inkflow transition`；陈旧 `HYDRATE` revision 会被拒绝。
 
-| 事件 | 第一版来源 | 能否真实检测 | 说明 |
-|---|---|---|---|
-| `wait_started` | 用户点击；模拟 adapter | **是（用户动作）** | 不声称知道外部 Agent 真的启动 |
-| `checkpoint_saved` | 用户提交一行 | **是** | 只保存主动输入的最小上下文 |
-| `drift_detected` | 用户点击；visibility 只能记录 `page_hidden` | **部分** | 页面隐藏不等于分心，不能自动判 Drift |
-| `micro_action_selected` | 用户选择 | **是** | “留白”也是有效值 |
-| `ai_completed` | 手动按钮、明确模拟计时、未来 adapter | **取决来源** | 事件必须带 `source` 与 `confidence`；模拟明确标注 |
-| `return_prompted` | 墨流进入 Return | **是** | 不等于通知成功送达 |
-| `return_confirmed` | 用户按“接回” | **是** | 核心成功事件之一 |
-| `return_latency` | `return_promptedAt` 到 `returnConfirmedAt` | **是** | 如提示不可见，另记录 visibility |
-| `context_recalled` | 用户自评完整/部分/未恢复 | **是（主观）** | 不伪装脑状态检测 |
-| `session_closed` | 用户关闭/完成 | **是** | 带原因 complete/abandoned/changed |
+## 3. 规范化事件
 
-## 数据模型（v1）
+| 任务书事件 | 第一版来源 | 真实性 | 实现映射 |
+| --- | --- | --- | --- |
+| `wait_started` | 用户封存 | 真实用户动作 | `START_WAIT` |
+| `checkpoint_saved` | 用户提交最小文本 | 真实 | 与 `wait_started` 同批追加 |
+| `drift_detected` | 用户点击“我飘走了” | 仅自报，不自动侦测 | `REPORT_DRIFT` |
+| `micro_action_selected` | 用户选择 | 真实，留白也是选择 | `SELECT_MICRO_ACTION` |
+| `ai_completed` | 手动或模拟 adapter | 带 `source` | `SIGNAL_DONE` |
+| `return_prompted` | 进入 Return | 真实 UI 状态，不等于通知送达 | 与完成/失败/救援同批追加 |
+| `return_confirmed` | 用户点击 Return Gate | 真实 | `REJOIN` |
+| `return_latency` | Return 到 Rejoin | 真实计算 | `REJOIN` 第二条事件 |
+| `context_recalled` | 用户主观 Review | 真实自评，不伪装脑状态 | `RECORD_REVIEW` |
+| `session_closed` | Review 完成或跳过 | 真实 | `RECORD_REVIEW` 第二条事件 |
+
+补充事件：`ai_failed`、`page_visibility_changed`、`micro_action_completed`、`first_step_completed`。所有事件追加到本地环形队列，最多 240 条。
+
+## 4. 当前数据模型（schema v1）
 
 ```ts
-type FlowState =
-  | "idle" | "intention" | "active" | "waiting"
-  | "drift" | "return" | "recovery" | "review";
-
-type AttentionMode = "ai" | "work" | "read" | "meditate";
-type CompletionSource = "manual" | "simulation" | "adapter";
+type FlowStage =
+  | "idle" | "intention" | "waiting" | "recovery"
+  | "drift" | "return" | "active" | "review";
 
 type FlowSession = {
-  id: string;
   schemaVersion: 1;
-  mode: AttentionMode;
-  state: FlowState;
-  intent: string;
-  checkpoint: {
-    lastAction?: string;
-    nextAction: string;
-    savedAt: number;
-  } | null;
-  wait: {
-    source: CompletionSource;
-    expectedSeconds?: number;
-    startedAt: number;
-    completedAt?: number;
-    outcome?: "completed" | "failed" | "manual-return";
-  } | null;
-  returnPromptedAt?: number;
-  returnConfirmedAt?: number;
-  contextRecall?: "full" | "partial" | "lost" | "skipped";
-  createdAt: number;
-  updatedAt: number;
-  closedAt?: number;
-};
-
-type FlowEvent = {
   id: string;
-  sessionId: string;
-  type: string;
-  at: number;
-  source: "user" | "system" | "simulation" | "adapter";
-  payload?: Record<string, string | number | boolean | null>;
-};
-
-type LocalProfile = {
-  schemaVersion: 1;
-  preferredMode?: AttentionMode;
-  preferredMicroAction?: "blank" | "look" | "breathe" | "stretch" | "prompt";
-  reminderPreference: "gentle" | "silent";
-  reducedGuidance: boolean;
-  recentReturnLatencyMs?: number;
+  revision: number;
+  stage: FlowStage;
+  mode: "ai" | "work" | "read" | "meditate";
+  objective: string;
+  nextAction: string;
+  source: "manual" | "simulation";
+  microAction: "blank" | "look" | "stretch" | "prompt";
+  lowEnergy: boolean;
+  checkpointAt: number | null;
+  expectedAt: number | null;
+  microActionAt: number | null;
+  recoveryCompletedAt: number | null;
+  signaledAt: number | null;
+  returnedAt: number | null;
+  rejoinedAt: number | null;
+  completedAt: number | null;
+  returnLatencyMs: number | null;
+  taskOutcome: "completed" | "failed" | "early" | "rescue" | null;
+  review: "complete" | "partial" | "lost" | "skipped" | null;
+  pageVisibility: "visible" | "hidden";
+  hiddenCount: number;
+  lastHiddenAt: number | null;
+  lastVisibleAt: number | null;
 };
 ```
 
-## 检测边界
+Profile 同为 schema v1，保存 onboarding、通知决定、静默偏好、低能量偏好、首选场景/恢复动作与完成接回次数。
 
-- `document.visibilityState` 只说明本页是否可见，不说明用户去了抖音、手机或另一项有效工作。
-- 浏览器 title/DOM 变化只能在同源或扩展权限下观察；普通 Web App 不读取 Codex/Claude/Cursor 页面。
-- Notification 权限不是核心依赖；拒绝后使用页面标题、声音可选和再次聚焦时的 Return。
-- 多标签页通过 `storage` 事件或 `BroadcastChannel` 协调 session 版本；冲突时提示，不静默覆盖。
+## 5. 检测与伦理边界
 
+- `visibilitychange` 只记录墨流页面是否可见；不会把页面隐藏解释成刷抖音、拿手机或漂移。
+- 普通 Web App 不读取 Codex、Claude、Cursor、其他标签页、浏览历史、Prompt 或代码。
+- 手动 adapter 不设置定时完成；模拟 adapter 只根据持久化的 `expectedAt` 产生明确标注的模拟信号。
+- 通知拒绝与不支持会被记住；核心流程降级为页面标题和 Return Gate。
+- checkpoint 正文只用于本机 UI 与快照，不进入 adapter payload、通知正文或 BroadcastChannel 消息。

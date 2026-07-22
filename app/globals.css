@@ -61,7 +61,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 
 .scene { max-width: 1360px; margin: 3vh auto 0; min-height: 570px; }
 .eyebrow { margin: 0 0 20px; color: var(--signal); font-size: 10px; line-height: 1; letter-spacing: .24em; font-weight: 800; }
-.scene h1 { margin: 0; font-family: var(--display); font-size: clamp(52px, 6.6vw, 112px); line-height: .86; letter-spacing: -.055em; text-transform: uppercase; font-weight: 820; max-width: 1000px; }
+.scene h1 { margin: 0; font-family: var(--display); font-size: clamp(52px, 6.6vw, 112px); line-height: .86; letter-spacing: -.055em; text-transform: uppercase; font-weight: 820; max-width: min(1000px, 100%); overflow-wrap: anywhere; }
 .scene h1 em, .welcome-card h2 em { color: var(--signal); font-style: normal; }
 .lede { color: var(--bone-dim); font-size: clamp(14px, 1.25vw, 18px); line-height: 1.8; max-width: 600px; margin: 34px 0; }
 
@@ -93,20 +93,23 @@ input:focus, textarea:focus { outline: 0; border-color: var(--signal); }
 .primary-action svg, .return-gate svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.6; }
 .text-action { border: 0; background: transparent; color: var(--bone-dim); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; padding: 15px; }
 
-.waiting-scene, .return-scene, .active-scene, .drift-scene, .review-scene { max-width: 1160px; margin: 0 auto; }
-.waiting-scene h1, .return-scene h1, .active-scene h1, .drift-scene h1, .review-scene h1 { font-size: clamp(58px, 7vw, 118px); }
+.waiting-scene, .recovery-scene, .return-scene, .active-scene, .drift-scene, .review-scene { max-width: 1160px; margin: 0 auto; }
+.waiting-scene h1, .recovery-scene h1, .return-scene h1, .active-scene h1, .drift-scene h1, .review-scene h1 { font-size: clamp(58px, 7vw, 118px); }
 .void-meter { float: right; width: 220px; margin: -7.5rem 0 0 40px; padding: 18px 0; border-block: 1px solid var(--line); display: grid; gap: 8px; }
 .void-meter span, .void-meter small { color: var(--quiet); font-size: 9px; line-height: 1.5; }
 .void-meter b { font-family: var(--display); font-size: 39px; letter-spacing: -.04em; }
 .checkpoint-strip { clear: both; margin-top: 58px; border-block: 1px solid var(--line); padding: 18px 0; display: grid; grid-template-columns: 145px 1fr; gap: 20px; align-items: center; }
 .checkpoint-strip span { color: var(--quiet); font-size: 10px; letter-spacing: .14em; }
 .checkpoint-strip strong { font-size: clamp(18px, 2vw, 28px); font-weight: 500; }
+.recovery-focus { clear: both; margin-top: 58px; border: 1px solid var(--line-strong); border-left: 3px solid var(--signal); padding: clamp(24px, 4vw, 52px); display: grid; gap: 16px; max-width: 760px; }
+.recovery-focus span { color: var(--signal); font-size: 10px; letter-spacing: .15em; text-transform: uppercase; }
+.recovery-focus strong { max-width: 620px; font-family: var(--display); font-size: clamp(24px, 4vw, 48px); font-weight: 430; line-height: 1.08; }
 .micro-grid, .review-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-top: 28px; }
 .micro-grid button, .review-grid button { min-height: 86px; border: 0; background: var(--ink); color: var(--bone-dim); cursor: pointer; display: flex; align-items: flex-end; justify-content: space-between; padding: 15px; text-align: left; transition: .2s ease; }
 .micro-grid button:hover, .micro-grid button[aria-pressed="true"], .review-grid button:hover { background: var(--ink-soft); color: var(--bone); }
 .micro-grid button[aria-pressed="true"] { box-shadow: inset 0 -2px var(--signal); }
 .micro-grid i, .review-grid i { color: var(--signal); font-size: 9px; font-style: normal; }
-.action-row { display: flex; gap: 18px; align-items: center; margin-top: 28px; }
+.action-row { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; margin-top: 28px; }
 .source-proof, .privacy-note { display: flex; align-items: center; gap: 8px; color: var(--quiet); font-size: 10px; margin-top: 20px; }
 .source-proof svg { width: 13px; height: 13px; stroke: var(--signal); fill: none; }
 
@@ -211,7 +214,7 @@ input:focus, textarea:focus { outline: 0; border-color: var(--signal); }
   .flow-line { height: 52px; grid-template-columns: 1fr 26px 1fr; }
   .flow-line .line-core { width: 26px; height: 26px; }
   .scene { margin-top: 20px; min-height: 500px; }
-  .scene h1, .waiting-scene h1, .return-scene h1, .active-scene h1, .drift-scene h1, .review-scene h1 { font-size: clamp(45px, 14vw, 70px); }
+  .scene h1, .waiting-scene h1, .recovery-scene h1, .return-scene h1, .active-scene h1, .drift-scene h1, .review-scene h1 { font-size: clamp(40px, 11.5vw, 54px); line-height: .92; }
   .setup-grid { gap: 30px; }
   .lede { margin: 22px 0; }
   .capture-form { padding: 22px 18px; }

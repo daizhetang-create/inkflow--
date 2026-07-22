@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createSession,
-  eventRecord,
+  eventRecords,
   returnSeconds,
   transition,
   type FlowEvent,
@@ -11,6 +11,7 @@ import {
   type FlowSession,
   type ReviewOutcome,
 } from "./flow/machine.mjs";
+import { adapterFor } from "./flow/adapters.mjs";
 import {
   appendEvent,
   archiveSession,
@@ -60,7 +61,7 @@ function Icon({ name }: { name: "mark" | "history" | "settings" | "arrow" | "clo
 }
 
 function FlowLine({ stage }: { stage: FlowSession["stage"] }) {
-  const broken = stage === "waiting" || stage === "drift";
+  const broken = stage === "waiting" || stage === "recovery" || stage === "drift";
   const rejoining = stage === "return";
   return (
     <div className={`flow-line ${broken ? "is-broken" : ""} ${rejoining ? "is-rejoining" : ""}`} aria-hidden="true">
@@ -111,9 +112,9 @@ export function FlowApp() {
       setNextAction(stored.nextAction);
       setSource(stored.source);
       setMicroAction(stored.microAction);
-      setLowEnergy(stored.lowEnergy);
     }
     setProfile(loadedProfile);
+    setLowEnergy(stored?.lowEnergy ?? loadedProfile.reducedGuidance);
     setHydrated(true);
     setNow(Date.now());
   }, []);
@@ -126,20 +127,32 @@ export function FlowApp() {
     if (!hydrated || typeof BroadcastChannel === "undefined") return;
     const channel = new BroadcastChannel("inkflow-vnext");
     channelRef.current = channel;
-    channel.onmessage = (message) => {
-      const incoming = message.data?.session as FlowSession | undefined;
+    const synchronize = () => {
+      const incoming = loadSnapshot();
       if (incoming && incoming.revision > sessionRef.current.revision) {
         setSession(incoming);
         setObjective(incoming.objective);
         setNextAction(incoming.nextAction);
+        setMicroAction(incoming.microAction);
+        setLowEnergy(incoming.lowEnergy);
         setNotice("另一标签页刚刚推进了这条流，已同步到最新状态。");
       }
     };
-    return () => channel.close();
+    channel.onmessage = (message) => {
+      if (message.data?.sessionId && message.data?.revision > sessionRef.current.revision) synchronize();
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === "inkflow:vnext:snapshot") synchronize();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      channel.close();
+    };
   }, [hydrated]);
 
   useEffect(() => {
-    if (session.stage !== "waiting") return;
+    if (session.stage !== "waiting" && session.stage !== "recovery") return;
     const interval = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(interval);
   }, [session.stage]);
@@ -152,8 +165,8 @@ export function FlowApp() {
         const after = transition(current, event, at);
         if (after === current) return current;
         saveSnapshot(after);
-        appendEvent(eventRecord(current, after, event, at));
-        channelRef.current?.postMessage({ session: after });
+        eventRecords(current, after, event, at).forEach(appendEvent);
+        channelRef.current?.postMessage({ sessionId: after.id, revision: after.revision });
         if (event.type === "RECORD_REVIEW") archiveSession(after);
         return after;
       } catch (error) {
@@ -164,20 +177,38 @@ export function FlowApp() {
   }, []);
 
   useEffect(() => {
-    if (session.stage !== "waiting" || session.source !== "simulation" || !session.expectedAt) return;
-    const remaining = Math.max(0, session.expectedAt - Date.now());
+    if ((session.stage !== "waiting" && session.stage !== "recovery") || session.source !== "simulation" || !session.expectedAt) return;
+    const adapter = adapterFor(session.source);
+    const remaining = adapter.remaining({ expectedAt: session.expectedAt }, Date.now());
+    if (remaining == null) return;
     const timer = window.setTimeout(() => {
-      send({ type: "SIGNAL_DONE", signalSource: "simulation" });
-      if (profile.notifications && Notification.permission === "granted") {
-        new Notification("墨流：任务已完成", { body: `回来先做：${session.nextAction}` });
+      send(adapter.completionEvent());
+      if (profile.notifications && profile.reminderPreference === "gentle" && Notification.permission === "granted") {
+        new Notification("墨流：任务已有结果", { body: "回来接回刚才封存的第一步。" });
       }
     }, remaining);
     return () => window.clearTimeout(timer);
-  }, [session.stage, session.source, session.expectedAt, session.nextAction, profile.notifications, send]);
+  }, [session.stage, session.source, session.expectedAt, profile.notifications, profile.reminderPreference, send]);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      const visibility = document.visibilityState === "hidden" ? "hidden" : "visible";
+      send({ type: "PAGE_VISIBILITY", visibility });
+      if (visibility === "visible" && ["waiting", "recovery"].includes(sessionRef.current.stage)) {
+        setNotice("墨流页面曾离开视线；原 checkpoint 和空档状态都还在。");
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [send]);
+
+  useEffect(() => {
+    document.title = session.stage === "return" ? "任务有结果 · 墨流接回" : "墨流 Inkflow｜注意力连续性工具";
+  }, [session.stage]);
 
   const modeCopy = MODE_COPY[session.mode];
   const advice = useMemo(() => {
-    if (session.stage === "waiting") return MICRO_ACTIONS.find((item) => item.id === session.microAction)?.note ?? MICRO_ACTIONS[0].note;
+    if (session.stage === "waiting" || session.stage === "recovery") return MICRO_ACTIONS.find((item) => item.id === session.microAction)?.note ?? MICRO_ACTIONS[0].note;
     if (session.stage === "drift") return "不要重做计划。把动作缩小到两分钟内可以开始的程度。";
     if (session.stage === "return") return session.lowEnergy ? "低能量模式：只读一遍这句话，然后点击接回。" : "不要先查看别处。点击后，只执行封存的这一小步。";
     if (session.stage === "active") return "先完成这一小步，再决定是否扩展；墨流不会替你增加任务。";
@@ -203,16 +234,25 @@ export function FlowApp() {
   };
 
   const askNotifications = async () => {
-    if (!("Notification" in window)) return setNotice("当前浏览器不支持系统通知；应用仍可完整使用。");
+    if (profile.reminderPreference === "silent") return setNotice("当前是静默模式；不会申请或发送系统通知。");
+    if (profile.notificationDecision === "denied") return setNotice("你已经拒绝过通知；墨流不会再次请求。可在浏览器站点设置中自行更改。");
+    if (profile.notificationDecision === "unsupported" || !("Notification" in window)) {
+      updateProfile({ notifications: false, notificationDecision: "unsupported" });
+      return setNotice("当前浏览器不支持系统通知；标题和页面内 Return Gate 仍可完整接回。");
+    }
     const permission = await Notification.requestPermission();
-    updateProfile({ notifications: permission === "granted" });
-    setNotice(permission === "granted" ? "通知已开启。只在模拟任务完成时提醒。" : "没有开启通知；应用不会再次主动询问。");
+    updateProfile({ notifications: permission === "granted", notificationDecision: permission === "granted" ? "granted" : "denied" });
+    setNotice(permission === "granted" ? "通知已开启。只发送不含工作内容的通用提醒。" : "没有开启通知；墨流不会再次主动询问。");
   };
 
   const chooseMode = (mode: FlowMode) => {
-    if (session.stage !== "idle") return;
-    setSession((current) => ({ ...current, mode }));
+    if (session.stage !== "idle" && session.stage !== "intention") return;
+    send({ type: "BEGIN_INTENTION", mode });
     updateProfile({ preferredMode: mode });
+  };
+
+  const beginIntention = () => {
+    if (session.stage === "idle") send({ type: "BEGIN_INTENTION", mode: session.mode });
   };
 
   const elapsed = session.checkpointAt ? now - session.checkpointAt : 0;
@@ -240,7 +280,7 @@ export function FlowApp() {
         <FlowLine stage={session.stage}/>
 
         <section className="scene" aria-live="polite">
-          {session.stage === "idle" && (
+          {(session.stage === "idle" || session.stage === "intention") && (
             <div className="setup-grid">
               <div className="scene-copy">
                 <p className="eyebrow">RETURN GATE / 01</p>
@@ -251,8 +291,8 @@ export function FlowApp() {
                 </div>
               </div>
               <div className="capture-form">
-                <label><span>{modeCopy.objective}</span><input value={objective} onChange={(event) => setObjective(event.target.value)} placeholder={modeCopy.objectivePlaceholder} maxLength={120}/></label>
-                <label><span>{modeCopy.next}</span><textarea value={nextAction} onChange={(event) => setNextAction(event.target.value)} placeholder={modeCopy.nextPlaceholder} maxLength={180} rows={3}/><small>{nextAction.length}/180 · 不要粘贴 Prompt、代码或隐私</small></label>
+                <label><span>{modeCopy.objective}</span><input value={objective} onFocus={beginIntention} onChange={(event) => setObjective(event.target.value)} placeholder={modeCopy.objectivePlaceholder} maxLength={120}/></label>
+                <label><span>{modeCopy.next}</span><textarea value={nextAction} onFocus={beginIntention} onChange={(event) => setNextAction(event.target.value)} placeholder={modeCopy.nextPlaceholder} maxLength={180} rows={3}/><small>{nextAction.length}/180 · 不要粘贴 Prompt、代码或隐私</small></label>
                 <div className="source-row">
                   <span>完成信号来源</span>
                   <div className="compact-toggle"><button aria-pressed={source === "manual"} onClick={() => setSource("manual")}>手动</button><button aria-pressed={source === "simulation"} onClick={() => setSource("simulation")}>模拟</button></div>
@@ -270,20 +310,39 @@ export function FlowApp() {
               <div className="void-meter"><span>空档已开始</span><b>{formatClock(elapsed)}</b><small>正计时只用于恢复记录，不设效率目标</small></div>
               <div className="checkpoint-strip"><span>回来只做</span><strong>{session.nextAction}</strong></div>
               <div className="micro-grid" aria-label="选择脑间歇">
-                {MICRO_ACTIONS.map((item, index) => <button key={item.id} aria-pressed={microAction === item.id} onClick={() => { setMicroAction(item.id); setSession((current) => ({ ...current, microAction: item.id })); }}><i>0{index + 1}</i>{item.label}</button>)}
+                {MICRO_ACTIONS.map((item, index) => <button key={item.id} aria-pressed={microAction === item.id} onClick={() => { setMicroAction(item.id); updateProfile({ preferredMicroAction: item.id }); send({ type: "SELECT_MICRO_ACTION", microAction: item.id }); }}><i>0{index + 1}</i>{item.label}</button>)}
               </div>
               <div className="action-row">
                 <button className="primary-action" onClick={() => send({ type: "SIGNAL_DONE", signalSource: "manual" })}>任务已完成 <Icon name="arrow"/></button>
+                <button className="text-action" onClick={() => send({ type: "SIGNAL_FAILED", signalSource: "manual" })}>任务失败</button>
                 <button className="text-action" onClick={() => send({ type: "EARLY_RETURN" })}>提前回来</button>
               </div>
               {session.source === "simulation" && <p className="source-proof"><Icon name="bolt"/> 模拟信号将在页面刷新后继续；你也可以手动标记完成。</p>}
             </div>
           )}
 
+          {session.stage === "recovery" && (
+            <div className="waiting-scene recovery-scene">
+              <p className="eyebrow">RECOVERY / {session.source === "simulation" ? "SIMULATION CONTINUES" : "MANUAL SIGNAL"}</p>
+              <h1>{session.microAction === "blank" ? "什么都不用填满。" : "让身体先接住空档。"}<br/><em>思路仍在原地等你。</em></h1>
+              <div className="void-meter"><span>空档仍在继续</span><b>{formatClock(elapsed)}</b><small>完成信号到达时会直接进入 Return Gate</small></div>
+              <div className="recovery-focus">
+                <span>{MICRO_ACTIONS.find((item) => item.id === session.microAction)?.label}</span>
+                <strong>{MICRO_ACTIONS.find((item) => item.id === session.microAction)?.note}</strong>
+              </div>
+              <div className="action-row">
+                <button className="primary-action" onClick={() => send({ type: "COMPLETE_RECOVERY" })}>{session.microAction === "blank" ? "留白结束，继续等待" : "恢复完成，继续等待"} <Icon name="arrow"/></button>
+                <button className="text-action" onClick={() => send({ type: "SIGNAL_DONE", signalSource: "manual" })}>任务已完成</button>
+                <button className="text-action" onClick={() => send({ type: "SIGNAL_FAILED", signalSource: "manual" })}>任务失败</button>
+                <button className="text-action" onClick={() => send({ type: "EARLY_RETURN" })}>提前回来</button>
+              </div>
+            </div>
+          )}
+
           {session.stage === "return" && (
             <div className="return-scene">
               <p className="eyebrow">RETURN SIGNAL / {session.lastSignal?.toUpperCase()}</p>
-              <h1>{session.lastSignal === "self-rescue" ? "路还在。" : "它完成了。"}<br/><em>你不用重新找路。</em></h1>
+              <h1>{session.lastSignal === "self-rescue" ? "路还在。" : session.taskOutcome === "failed" ? "任务没有完成。" : session.taskOutcome === "early" ? "你提前回来了。" : "它完成了。"}<br/><em>{session.taskOutcome === "failed" ? "先接回判断，再处理失败。" : "你不用重新找路。"}</em></h1>
               <button className="return-gate" onClick={() => send({ type: "REJOIN" })}>
                 <span>回来第一步</span><strong>{session.nextAction}</strong><b>接回这一步 <Icon name="arrow"/></b>
               </button>
@@ -346,7 +405,7 @@ export function FlowApp() {
       {panel && <div className="panel-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setPanel(null); }}>
         <aside className="side-panel" role="dialog" aria-modal="true" aria-label={panel === "history" ? "接回记录" : "设置"}>
           <header><div><span>INKFLOW / LOCAL</span><h2>{panel === "history" ? "接回记录" : "设置"}</h2></div><button onClick={() => setPanel(null)} aria-label="关闭"><Icon name="close"/></button></header>
-          {panel === "history" ? <HistoryPanel current={session}/> : <SettingsPanel profile={profile} lowEnergy={lowEnergy} setLowEnergy={setLowEnergy} askNotifications={askNotifications} clearData={() => { if (window.confirm("只清除墨流 vNext 的本地记录？旧版数据不会被触碰。")) { clearVnextData(); window.location.reload(); } }}/>}
+          {panel === "history" ? <HistoryPanel current={session}/> : <SettingsPanel profile={profile} lowEnergy={lowEnergy} onLowEnergyChange={(value) => { setLowEnergy(value); updateProfile({ reducedGuidance: value }); }} onReminderPreferenceChange={(value) => updateProfile({ reminderPreference: value, notifications: value === "silent" ? false : profile.notifications })} askNotifications={askNotifications} clearData={() => { if (window.confirm("只清除墨流 vNext 的本地记录？旧版数据不会被触碰。")) { clearVnextData(); window.location.reload(); } }}/>}
         </aside>
       </div>}
 
@@ -370,10 +429,12 @@ function HistoryPanel({ current }: { current: FlowSession }) {
   return <div className="history-list">{items.map((item, index) => <article key={item.id}><i>{String(index + 1).padStart(2, "0")}</i><div><span>{MODES.find((mode) => mode.id === item.mode)?.label} · {new Date(item.updatedAt).toLocaleDateString("zh-CN")}</span><strong>{item.nextAction}</strong><small>{returnSeconds(item) ?? "—"} 秒接回 · {reviewLabel(item.review)}</small></div></article>)}</div>;
 }
 
-function SettingsPanel({ profile, lowEnergy, setLowEnergy, askNotifications, clearData }: { profile: FlowProfile; lowEnergy: boolean; setLowEnergy: (value: boolean) => void; askNotifications: () => void; clearData: () => void }) {
+function SettingsPanel({ profile, lowEnergy, onLowEnergyChange, onReminderPreferenceChange, askNotifications, clearData }: { profile: FlowProfile; lowEnergy: boolean; onLowEnergyChange: (value: boolean) => void; onReminderPreferenceChange: (value: "gentle" | "silent") => void; askNotifications: () => void; clearData: () => void }) {
+  const notificationLabel = profile.notificationDecision === "denied" ? "已拒绝" : profile.notificationDecision === "unsupported" ? "不支持" : profile.notifications ? "已开启" : "选择开启";
   return <div className="settings-list">
-    <section><div><strong>低能量模式</strong><p>减少次级信息与动态，让接回动作更轻。</p></div><button className="switch" aria-pressed={lowEnergy} onClick={() => setLowEnergy(!lowEnergy)}><i/></button></section>
-    <section><div><strong>完成通知</strong><p>只用于明确的模拟任务。首次点击后才向浏览器申请。</p></div><button className="outline-button" onClick={askNotifications}>{profile.notifications ? "已开启" : "选择开启"}</button></section>
+    <section><div><strong>低能量模式</strong><p>减少次级信息与动态，让接回动作更轻。</p></div><button className="switch" aria-pressed={lowEnergy} onClick={() => onLowEnergyChange(!lowEnergy)}><i/></button></section>
+    <section><div><strong>静默提醒</strong><p>开启后只保留页面标题和 Return Gate，不发送系统通知。</p></div><button className="switch" aria-pressed={profile.reminderPreference === "silent"} onClick={() => onReminderPreferenceChange(profile.reminderPreference === "silent" ? "gentle" : "silent")}><i/></button></section>
+    <section><div><strong>完成通知</strong><p>只用于明确的模拟任务，且不在锁屏内容中暴露 checkpoint。</p></div><button className="outline-button" disabled={profile.notificationDecision === "denied" || profile.notificationDecision === "unsupported" || profile.reminderPreference === "silent"} onClick={askNotifications}>{notificationLabel}</button></section>
     <section><div><strong>存储方式</strong><p>所有快照、事件与节律记忆只保存在当前浏览器。</p></div><span className="local-badge">LOCAL</span></section>
     <section className="danger-zone"><div><strong>清除 vNext 数据</strong><p>旧版计时器数据不受影响。</p></div><button className="outline-button" onClick={clearData}>清除</button></section>
   </div>;

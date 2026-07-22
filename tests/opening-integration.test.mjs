@@ -33,6 +33,6 @@ test("vNext starts at a deterministic Return Gate shell while retaining legacy c
   assert.match(root, /<FlowApp\s*\/>/);
   assert.match(opening, /inkflow:opening-complete/);
   assert.match(focus, /inkflow:sessions/);
-  assert.match(serviceWorker, /inkflow-vnext-1/);
+  assert.match(serviceWorker, /inkflow-vnext-v2/);
   assert.doesNotMatch(serviceWorker, /inkflow-opening/);
 });

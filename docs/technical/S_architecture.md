@@ -1,71 +1,82 @@
-# S — vNext 技术架构
+# S｜vNext 技术架构
 
-## 原则
+## 1. 原则
 
 1. local-first；工作正文默认不离开浏览器。
-2. 状态机先于页面布尔值；事件先于统计图。
-3. 手动触发完整可靠，模拟与自动能力显式标注。
+2. 状态机先于页面布尔值；规范化事件先于统计图。
+3. 手动触发完整可靠；模拟能力始终标注来源。
 4. adapter 可替换；主 UI 不依赖任何一家 Agent。
-5. 不为“完整”搭空后端；本轮 D1/R2 保持未绑定。
+5. 后端、账号与数据库不是本轮内核，不搭空壳。
 
-## 模块
+## 2. 实际模块
 
 ```text
-app/FlowApp.tsx                 组合状态 UI
-app/flow/types.ts               状态、session、event、profile 类型
-app/flow/reducer.ts             纯状态转换与不变量
-app/flow/storage.ts             schema v1、解析、恢复、清空
-app/flow/adapters.ts            WaitAdapter + manual/simulation
-app/flow/useFlowRuntime.ts      计时、visibility、通知、BroadcastChannel
-app/flow/content.ts             四场景文案与微行动
-app/globals.css                 vNext 视觉系统
-tests/flow-reducer.test.mjs     转换与异常
-tests/vnext-contract.test.mjs   隐私/诚实/渲染契约
+app/FlowRoot.tsx               确定性 SSR 壳与客户端挂载边界
+app/FlowApp.tsx                八状态 UI、浏览器能力与闭环编排
+app/flow/machine.mjs           纯转换、不变量与规范化事件
+app/flow/machine.d.ts          session/event 类型合同
+app/flow/adapters.mjs          manual/simulation WaitAdapter
+app/flow/storage.ts            schema v1 校验、迁移、快照、历史
+app/globals.css                vNext 视觉、响应式、reduced-motion
+public/sw.js                   network-first PWA 应用壳
+tests/*.test.mjs               状态、存储、adapter、SSR、离线合同
 ```
 
-最终可根据实现复杂度合并文件，但 reducer/storage/adapter 的边界必须保留。
+UI 文件可以组合展示逻辑，但状态转换、adapter 与 storage 边界保持独立并可单测。
 
-## 状态与事件持久化
+## 3. local-first 与恢复
 
-- Key：`inkflow:vnext:snapshot`、`inkflow:vnext:events`、`inkflow:vnext:profile`。
-- `schemaVersion: 1`；读取时逐字段校验，失败则安全回到 Idle 并保留“清理损坏数据”入口。
-- 当前 session 每次有意义转换写快照；事件环形保留最近 200 条，避免无限增长。
-- 旧 `inkflow:sessions/settings/lastBook/lastGoal` 不读取、不删除，以便 legacy 恢复。
-- `BroadcastChannel("inkflow-vnext")`；不可用时使用 `storage` 事件。消息只传 revision/sessionId，不传额外正文。
+- 存储键：`inkflow:vnext:snapshot`、`events`、`profile`、`history`。
+- session/profile 使用 `schemaVersion: 1`；读取时校验关键字段。
+- vNext 早期快照缺少新增字段时会安全补齐；损坏 JSON 或非法状态退回 Idle，不伪造历史。
+- 当前 session 每次有意义转换写快照；事件最多保留 240 条；历史最多 30 条。
+- 旧 `inkflow:sessions/settings/lastBook/lastGoal` 不读取、不修改、不删除。
+- 清空入口仅枚举 `inkflow:vnext:*` 四个键。
 
-## Adapter 设计
+## 4. 跨标签同步
 
-- `manual`：start 只进入 Waiting；用户显式 complete/fail/cancel。
-- `simulation`：可选 20 秒或 5 分钟；`setTimeout` 只模拟完成信号，UI 常驻“模拟”。刷新后按 `startedAt + expectedSeconds` 计算，不依赖存活 timer。
-- 未来 adapter：Codex/Claude/Cursor/扩展需提供可核验事件与来源；界面只有在 `honesty="connected"` 时显示“已连接”。
-- adapter 不接收 checkpoint 正文，除非未来用户显式授权；默认只接 sessionId。
+- `BroadcastChannel("inkflow-vnext")` 只发送 `sessionId + revision`，不广播 checkpoint 正文。
+- 接收方从同源 localStorage 重新校验快照，再比较 revision。
+- 不支持 BroadcastChannel 时，`storage` 事件执行同一恢复路径。
+- 陈旧 revision 不覆盖新状态；真实双标签浏览器回归已验证第二标签 Rejoin 后第一标签进入 Active。
 
-## 通知与浏览器能力
+## 5. WaitAdapter
 
-- 首版不主动请求通知。设置中用户触发后才调用 `Notification.requestPermission()`。
-- granted：完成时通知任务标题和通用“回来继续”，默认不放 nextAction 以防锁屏泄露；用户可选择允许。
-- denied/unavailable：标题变化 + 页面再次聚焦 Return。
-- `visibilitychange` 记录可见性；不读取浏览历史、不判断手机使用。
+统一接口包含：`id`、`honesty`、`label`、`schedulesCompletion`、`remaining(metadata)` 与 `completionEvent()`。
 
-## Service Worker
+- `manual`：不设置定时器，只接受用户完成、失败或提前回来。
+- `simulation`：20 秒或 5 分钟；只接收 `expectedAt` 元数据，刷新后重新计算剩余时间。
+- 未知来源安全降级为 manual，不显示“已连接”。
+- 未来 Codex/Claude/Cursor adapter 只有在事件可核验且用户明确授权后才能增加；默认不接收 checkpoint 正文。
 
-- 升级 cache 为 `inkflow-vnext-v1`。
-- 缓存应用壳和必要静态资产；旧 19MB 开场媒体不预缓存。
-- navigation 采用 network-first + cached shell；静态资源只缓存成功同源 GET。
-- 不在 SW 中保存 session 内容或通知 payload。
+## 6. 浏览器能力与降级
 
-## 隐私与安全
+- `visibilitychange` 写 `PAGE_VISIBILITY`，但不自动进入 Drift。
+- Return 状态将标题改为通用“任务有结果 · 墨流接回”，不暴露 checkpoint。
+- 通知只在设置中由用户点击后申请；拒绝、不支持与静默偏好均持久化。
+- 通知正文只说“回来接回刚才封存的第一步”，不含工作内容。
+- `prefers-reduced-motion` 将动画压缩到近零，状态仍由形态与文字表达。
 
-- 不上传 checkpoint、事件或 profile；无 analytics SDK。
-- 限长与纯文本渲染，React 默认转义，禁止 `dangerouslySetInnerHTML`。
+## 7. PWA 与离线
+
+- cache：`inkflow-vnext-v2`。
+- 预缓存 `/`、manifest 与 `og-vnext.png`；不缓存旧版 19MB 开场视频。
+- navigation 使用 network-first，失败后返回缓存的 `/`。
+- 只缓存成功的同源 GET；Service Worker 不持有 session 或通知正文。
+- 离线测试用真实拒绝网络的 fetch handler 验证缓存 shell 返回 200。
+
+## 8. 隐私与安全
+
+- 无 analytics SDK、无云上传、无账号要求。
+- 输入限长，React 纯文本渲染；不存在 `dangerouslySetInnerHTML`。
 - 不请求麦克风、摄像头、系统使用情况或跨站读取权限。
-- 清空功能只删除三个 `inkflow:vnext:*` key，不触碰 legacy/user 文件。
-- auth helper 保留未调用；匿名可用是 MVP 原则。
+- auth helper 与空数据库资产保留但不进入运行路径。
+- BroadcastChannel、adapter、通知均不传 checkpoint 正文。
 
-## 测试策略
+## 9. 验证策略
 
-- reducer 表驱动测试覆盖所有状态/事件合法与非法转换。
-- fake clock 覆盖 20 秒/5 分钟、刷新后超时、提前回来、失败。
-- DOM 合同验证真实文案、模拟标识、隐私声明、无旧计时/阅读 Dashboard。
-- 手工浏览器矩阵覆盖通知拒绝/不支持、离线、多标签页、移动端、reduced-motion、低能量。
-
+- 状态机：八状态闭环、20 秒/5 分钟、失败、提前回来、无人返回、漂移、visibility、非法转换、陈旧 revision。
+- storage：schema、迁移、损坏恢复、通知拒绝、静默/低能量、只清 vNext。
+- adapter：manual 不伪造定时、simulation 按持久化元数据恢复、未知来源降级。
+- SSR/PWA：确定性壳、metadata、manifest、视觉合同、离线应用壳。
+- 浏览器：Recovery 刷新恢复、5 分钟模拟、失败 Return、多标签同步、390×844 真正 Chromium 视口。

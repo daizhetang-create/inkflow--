@@ -4,12 +4,14 @@
 
 - Return Gate 注意力连续性内核；
 - AI / 工作 / 阅读 / 冥想四种同构场景；
-- 手动与明确模拟完成来源；
+- 手动与明确模拟完成来源，以及任务失败/提前回来分支；
+- 独立 Recovery 状态和可完成的留白/远眺/伸展/一句判断；
 - 主动漂移救援和动作缩小；
 - local-first 快照、历史、节律记忆；
-- BroadcastChannel 多标签同步；
+- 仅发送 id/revision 的 BroadcastChannel 多标签同步与 storage 事件降级；
 - 刷新可恢复模拟计时；
-- 完成通知、低能量模式、PWA 离线壳；
+- 通知拒绝记忆、静默提醒、低能量模式、PWA 离线壳；
+- schema v1 快照校验、早期 vNext 迁移和损坏数据安全降级；
 - 完整研究、PRD、原型、QA 和实验文档。
 
 ## Changed
