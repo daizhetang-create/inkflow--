@@ -19,10 +19,11 @@ import type {
   SyncAction,
   Viewer,
 } from "./attention/types";
+import { PlannerView } from "./planner/PlannerView";
 
-type View = "now" | "timeline" | "insights";
+type View = "plan" | "now" | "timeline" | "insights";
 type SyncState = "loading" | "synced" | "local" | "syncing";
-type IconName = "now" | "timeline" | "insights" | "settings" | "cloud" | "download" | "trash" | "close" | "interrupt" | "idea" | "rest";
+type IconName = "plan" | "now" | "timeline" | "insights" | "settings" | "cloud" | "download" | "trash" | "close" | "interrupt" | "idea" | "rest";
 
 const EVENT_COPY: Record<EventKind, { action: string; past: string }> = {
   drift: { action: "散开", past: "散开" },
@@ -33,6 +34,7 @@ const EVENT_COPY: Record<EventKind, { action: string; past: string }> = {
 };
 
 const ICONS: Record<IconName, string> = {
+  plan: "◷",
   now: "●",
   timeline: "≋",
   insights: "✦",
@@ -104,7 +106,7 @@ function FlowRail({ session, now }: { session: AttentionSession; now: number }) 
 }
 
 export function AttentionApp({ viewer }: { viewer: Viewer }) {
-  const [view, setView] = useState<View>("now");
+  const [view, setView] = useState<View>("plan");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sessions, setSessions] = useState<AttentionSession[]>(() => loadCache());
   const [syncState, setSyncState] = useState<SyncState>("loading");
@@ -308,9 +310,9 @@ export function AttentionApp({ viewer }: { viewer: Viewer }) {
       <a className="skip-link" href="#main">跳到主要内容</a>
       <div className="app-shell">
         <header className="topbar">
-          <button className="brand-button" onClick={() => changeView("now")} aria-label="回到墨流此刻页">
+          <button className="brand-button" onClick={() => changeView("plan")} aria-label="回到墨流今日计划">
             <span className="brand-drop" aria-hidden="true"><i/><i/></span>
-            <span><strong>墨流</strong><small>{active ? "正在记录" : "注意力日志"}</small></span>
+            <span><strong>墨流</strong><small>{active ? "正在记录" : view === "plan" ? "今日计划" : "注意力实验"}</small></span>
           </button>
           <div className="topbar-actions">
             <button className={`sync-state is-${syncState}`} onClick={() => runSync(true)} aria-label="立即同步"><i/>{syncLabel}</button>
@@ -321,6 +323,8 @@ export function AttentionApp({ viewer }: { viewer: Viewer }) {
 
         <main id="main" className={`app-content view-${view}`}>
           {notice && <div className="ambient-notice" role="status"><span>{notice}</span><button onClick={() => setNotice("")} aria-label="关闭提示"><Icon name="close"/></button></div>}
+
+          {view === "plan" && <PlannerView viewer={viewer}/>}
 
           {view === "now" && (
             <section className={`now-screen ${active ? "is-active" : "is-idle"}`}>
@@ -446,7 +450,8 @@ export function AttentionApp({ viewer }: { viewer: Viewer }) {
         </main>
 
         <nav className="bottom-nav" aria-label="主导航">
-          <button className={view === "now" ? "is-active" : ""} onClick={() => changeView("now")}><Icon name="now"/><span>此刻</span>{active && <i/>}</button>
+          <button className={view === "plan" ? "is-active" : ""} onClick={() => changeView("plan")}><Icon name="plan"/><span>计划</span></button>
+          <button className={view === "now" ? "is-active" : ""} onClick={() => changeView("now")}><Icon name="now"/><span>专注</span>{active && <i/>}</button>
           <button className={view === "timeline" ? "is-active" : ""} onClick={() => changeView("timeline")}><Icon name="timeline"/><span>轨迹</span></button>
           <button className={view === "insights" ? "is-active" : ""} onClick={() => changeView("insights")}><Icon name="insights"/><span>洞察</span></button>
         </nav>

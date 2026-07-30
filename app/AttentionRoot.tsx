@@ -14,11 +14,11 @@ function LoadingShell() {
         <div className="loading-rule"/>
       </aside>
       <main className="app-main">
-        <header className="app-header"><span>正在接回今天的记录</span><i/></header>
+        <header className="app-header"><span>正在接回今天的计划</span><i/></header>
         <section className="now-empty">
           <p className="kicker">此刻 / NOW</p>
-          <h1>你现在，<br/>把注意力放在哪里？</h1>
-          <p>正在读取这台设备上的即时记录，并与云端核对。</p>
+          <h1>今天，<br/>准备从哪一段开始？</h1>
+          <p>正在读取这台设备上的时间安排，并与云端核对。</p>
         </section>
       </main>
     </div>

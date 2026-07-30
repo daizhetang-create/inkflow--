@@ -28,3 +28,18 @@ export const attentionEvents = sqliteTable("attention_events", {
   index("attention_events_session_created_idx").on(table.sessionId, table.createdAt),
   index("attention_events_owner_created_idx").on(table.ownerId, table.createdAt),
 ]);
+
+export const planItems = sqliteTable("plan_items", {
+  id: text("id").primaryKey(),
+  ownerId: text("owner_id").notNull(),
+  title: text("title").notNull(),
+  plannedStart: text("planned_start").notNull(),
+  durationMinutes: integer("duration_minutes").notNull(),
+  status: text("status").notNull().default("planned"),
+  startedAt: text("started_at"),
+  elapsedSeconds: integer("elapsed_seconds").notNull().default(0),
+  completedAt: text("completed_at"),
+  updatedAt: text("updated_at").notNull(),
+}, (table) => [
+  index("plan_items_owner_start_idx").on(table.ownerId, table.plannedStart),
+]);

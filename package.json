@@ -1,6 +1,6 @@
 {
   "name": "inkflow-daily-attention",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
@@ -38,5 +38,5 @@
     "wrangler": "4.92.0"
   },
   "type": "module",
-  "description": "墨流：实时记录意图、走神、打断与回来的日常注意力应用。"
+  "description": "墨流：以今日时间规划与清晰计时为主入口，并保留一键回来的注意力实验。"
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = "inkflow-daily-v1";
+const CACHE_NAME = "inkflow-daily-v2";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/favicon.svg"];
 
 self.addEventListener("install", (event) => {

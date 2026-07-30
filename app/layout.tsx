@@ -1,26 +1,27 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./planner.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://inkflow-reading-2026.chichub.chatgpt.site"),
-  title: "墨流 Inkflow｜看见注意力真实的一天",
-  description: "实时记下此刻的意图、走神、打断与回来。墨流不是另一个计时器，而是一份只属于你的日常注意力记录。",
+  title: "墨流 Inkflow｜把今天排成可以开始的几段",
+  description: "安排今天要做的事、开始时间与时长，用清晰计时把计划真正带到行动。注意力记录作为独立实验保留。",
   applicationName: "墨流 Inkflow",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "墨流" },
   formatDetection: { telephone: false },
   icons: { icon: "/favicon.svg" },
   openGraph: {
-    title: "墨流 Inkflow｜看见注意力真实的一天",
-    description: "从一句“我现在要做什么”开始，留下走神、打断与回来的真实轨迹。",
+    title: "墨流 Inkflow｜把今天排成可以开始的几段",
+    description: "安排时间、开始任务、暂停与完成，让今天的每一段都更容易真正开始。",
     type: "website",
     locale: "zh_CN",
-    images: [{ url: "/og-daily.png", width: 1536, height: 1024, alt: "墨流 Inkflow 日常注意力记录" }],
+    images: [{ url: "/og-planner.png", width: 1536, height: 1024, alt: "墨流 Inkflow 今日时间计划" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "墨流 Inkflow",
-    description: "不是计时器，是你一天真实的注意力轨迹。",
-    images: ["/og-daily.png"],
+    description: "先安排今天，再从一段真实行动开始。",
+    images: ["/og-planner.png"],
   },
 };
 

@@ -1,0 +1,1003 @@
+.planner-screen {
+  width: min(1060px, calc(100% - 56px));
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 34px 0 58px;
+  position: relative;
+}
+
+.planner-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  margin-bottom: 26px;
+}
+
+.planner-heading h1 {
+  margin: 12px 0 8px;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: clamp(36px, 4vw, 56px);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.055em;
+}
+
+.planner-heading h1 em {
+  color: var(--moss-2);
+  font-style: normal;
+}
+
+.planner-heading p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.plan-add-button {
+  min-width: 132px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 0;
+  border-radius: 16px;
+  color: var(--white);
+  background: var(--moss);
+  box-shadow: 0 14px 30px rgba(23, 60, 49, 0.18);
+  cursor: pointer;
+  font-size: 13px;
+  transition: transform 220ms var(--ease), box-shadow 220ms var(--ease);
+}
+
+.plan-add-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 38px rgba(23, 60, 49, 0.24);
+}
+
+.plan-add-button span {
+  font-size: 20px;
+  font-weight: 300;
+}
+
+.planner-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+  align-items: stretch;
+  gap: 18px;
+}
+
+.current-plan-card,
+.day-agenda {
+  min-height: 460px;
+  border-radius: 30px;
+  overflow: hidden;
+  position: relative;
+}
+
+.current-plan-card {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 26px 25px;
+  color: var(--white);
+  background:
+    radial-gradient(circle at 72% 18%, rgba(155, 196, 173, 0.18), transparent 31%),
+    radial-gradient(circle at 13% 94%, rgba(196, 108, 77, 0.18), transparent 30%),
+    linear-gradient(145deg, #1d4a3d 0%, #102e27 58%, #0b241f 100%);
+  box-shadow: 0 24px 50px rgba(21, 47, 39, 0.2);
+  isolation: isolate;
+}
+
+.current-plan-card::before,
+.current-plan-card::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+}
+
+.current-plan-card::before {
+  width: 290px;
+  height: 290px;
+  right: -132px;
+  top: -110px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 32px rgba(255, 255, 255, 0.018), 0 0 0 74px rgba(255, 255, 255, 0.012);
+}
+
+.current-plan-card::after {
+  width: 110px;
+  height: 110px;
+  left: -65px;
+  bottom: -52px;
+  background: rgba(196, 108, 77, 0.18);
+  filter: blur(4px);
+}
+
+.current-plan-card.is-overtime {
+  background:
+    radial-gradient(circle at 72% 18%, rgba(233, 181, 135, 0.18), transparent 31%),
+    radial-gradient(circle at 13% 94%, rgba(196, 108, 77, 0.24), transparent 30%),
+    linear-gradient(145deg, #4b352a 0%, #2f2923 58%, #211d1a 100%);
+}
+
+.current-plan-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: relative;
+  z-index: 2;
+}
+
+.current-plan-meta > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.72);
+  font-family: "DM Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.current-plan-meta > span i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #a9d8b8;
+  box-shadow: 0 0 0 5px rgba(169, 216, 184, 0.1);
+}
+
+.is-running .current-plan-meta > span i {
+  animation: plan-blink 1.8s ease-in-out infinite;
+}
+
+.current-plan-meta button {
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.64);
+  background: rgba(255, 255, 255, 0.045);
+  cursor: pointer;
+  font-size: 9px;
+}
+
+.current-plan-copy {
+  margin-top: 27px;
+  position: relative;
+  z-index: 2;
+}
+
+.current-plan-copy > span {
+  color: rgba(255, 255, 255, 0.58);
+  font-family: "DM Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.current-plan-copy h2,
+.plan-empty-focus h2 {
+  max-width: 500px;
+  margin: 9px 0 0;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: clamp(27px, 3vw, 40px);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.045em;
+}
+
+.plan-timer-stage {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) minmax(130px, 0.55fr);
+  align-items: center;
+  gap: 24px;
+  position: relative;
+  z-index: 2;
+}
+
+.plan-timer-ring {
+  --plan-progress: 0deg;
+  width: min(225px, 100%);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  border-radius: 50%;
+  position: relative;
+  background: conic-gradient(var(--clay) 0 var(--plan-progress), rgba(255, 255, 255, 0.105) var(--plan-progress) 360deg);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.19), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition: background 700ms linear;
+}
+
+.plan-timer-ring::before {
+  content: "";
+  width: calc(100% - 15px);
+  height: calc(100% - 15px);
+  position: absolute;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 33% 24%, rgba(255, 255, 255, 0.085), transparent 34%),
+    #15382f;
+  box-shadow: inset 0 0 34px rgba(0, 0, 0, 0.16);
+}
+
+.is-overtime .plan-timer-ring::before {
+  background: radial-gradient(circle at 33% 24%, rgba(255, 255, 255, 0.075), transparent 34%), #3a2d26;
+}
+
+.plan-timer-ring > div {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  position: relative;
+  z-index: 1;
+}
+
+.plan-timer-ring small {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+
+.plan-timer-ring strong {
+  font-family: "DM Mono", monospace;
+  font-size: clamp(30px, 3.4vw, 43px);
+  font-weight: 300;
+  letter-spacing: -0.055em;
+}
+
+.timer-actions {
+  display: grid;
+  gap: 9px;
+}
+
+.timer-actions button,
+.plan-ready-stage button,
+.plan-empty-focus button {
+  min-height: 46px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: transform 180ms var(--ease), background 180ms ease;
+}
+
+.timer-actions button:hover,
+.plan-ready-stage button:hover,
+.plan-empty-focus button:hover {
+  transform: translateY(-1px);
+}
+
+.timer-primary,
+.timer-complete {
+  border: 0;
+  color: var(--moss);
+  background: var(--white);
+  font-weight: 700;
+}
+
+.timer-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.timer-complete {
+  color: var(--white);
+  background: var(--clay);
+}
+
+.plan-ready-stage {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  position: relative;
+  z-index: 2;
+}
+
+.plan-ready-stage > div span {
+  color: #b9dbc4;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.plan-ready-stage > div p {
+  max-width: 300px;
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.plan-ready-stage button,
+.plan-empty-focus button {
+  min-width: 168px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 0 18px;
+  border: 0;
+  color: var(--moss);
+  background: var(--white);
+  font-weight: 700;
+}
+
+.plan-ready-stage button i,
+.plan-empty-focus button i {
+  font-style: normal;
+  font-size: 18px;
+}
+
+.plan-empty-focus {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  position: relative;
+  z-index: 2;
+}
+
+.plan-empty-focus > span {
+  color: #b9dbc4;
+  font-size: 12px;
+}
+
+.plan-empty-focus h2 {
+  margin: 14px 0 30px;
+}
+
+.day-agenda {
+  padding: 20px 20px 18px;
+  color: var(--ink);
+  background: rgba(255, 254, 250, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  box-shadow: var(--shadow-soft), inset 0 0 0 1px rgba(21, 36, 31, 0.035);
+}
+
+.day-agenda > header {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--line);
+}
+
+.day-agenda > header > div {
+  display: grid;
+  gap: 4px;
+  padding: 0 12px;
+  border-right: 1px solid var(--line);
+}
+
+.day-agenda > header > div:first-child {
+  padding-left: 2px;
+}
+
+.day-agenda > header > div:last-child {
+  border-right: 0;
+}
+
+.day-agenda > header span {
+  color: var(--ink-faint);
+  font-size: 9px;
+}
+
+.day-agenda > header strong {
+  font-family: "DM Mono", monospace;
+  font-size: 18px;
+  font-weight: 400;
+}
+
+.day-agenda > header strong small {
+  color: var(--ink-faint);
+  font-family: inherit;
+  font-size: 8px;
+}
+
+.agenda-list {
+  max-height: 336px;
+  overflow: auto;
+  padding: 12px 1px 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(21, 36, 31, 0.16) transparent;
+}
+
+.agenda-item {
+  min-height: 78px;
+  display: grid;
+  grid-template-columns: 43px 18px minmax(0, 1fr);
+  position: relative;
+}
+
+.agenda-time {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  padding-top: 15px;
+  font-family: "DM Mono", monospace;
+}
+
+.agenda-time strong {
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.agenda-time span {
+  color: var(--ink-faint);
+  font-size: 8px;
+}
+
+.agenda-spine {
+  position: relative;
+}
+
+.agenda-spine::before {
+  content: "";
+  width: 1px;
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  background: var(--line);
+}
+
+.agenda-spine i {
+  width: 9px;
+  height: 9px;
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 17px;
+  transform: translateX(-50%);
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  background: #a2aaa5;
+  box-shadow: 0 0 0 1px rgba(21, 36, 31, 0.12);
+}
+
+.agenda-item.is-active .agenda-spine i {
+  background: var(--clay);
+  box-shadow: 0 0 0 5px rgba(196, 108, 77, 0.12);
+}
+
+.agenda-item.is-completed .agenda-spine i {
+  background: #6b957b;
+}
+
+.agenda-content {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 4px 0 5px 7px;
+  padding: 10px 9px 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 15px;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+
+.agenda-item.is-focus .agenda-content {
+  background: rgba(222, 232, 222, 0.55);
+  border-color: rgba(23, 60, 49, 0.08);
+}
+
+.agenda-item.is-completed .agenda-content {
+  opacity: 0.56;
+}
+
+.agenda-content > div:first-child {
+  min-width: 0;
+}
+
+.agenda-content span {
+  color: var(--clay);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.agenda-content h3 {
+  overflow: hidden;
+  margin: 3px 0 3px;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agenda-content small {
+  display: block;
+  overflow: hidden;
+  color: var(--ink-faint);
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agenda-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.agenda-actions button {
+  min-width: 42px;
+  height: 30px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--moss);
+  background: rgba(23, 60, 49, 0.075);
+  cursor: pointer;
+  font-size: 9px;
+}
+
+.agenda-actions .agenda-delete {
+  min-width: 28px;
+  color: var(--ink-faint);
+  background: transparent;
+  font-size: 15px;
+}
+
+.agenda-empty {
+  width: 100%;
+  min-height: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 18px;
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, 0.28);
+  cursor: pointer;
+}
+
+.agenda-empty > i {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--moss-pale);
+  font-style: normal;
+  font-size: 22px;
+}
+
+.agenda-empty > span {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+}
+
+.agenda-empty strong {
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 15px;
+}
+
+.agenda-empty small {
+  color: var(--ink-faint);
+  font-size: 9px;
+}
+
+.agenda-add {
+  width: 100%;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 7px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, 0.28);
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.agenda-add span {
+  font-size: 17px;
+}
+
+.plan-notice {
+  width: min(520px, calc(100% - 24px));
+  min-height: 46px;
+  display: grid;
+  place-items: center;
+  position: fixed;
+  z-index: 70;
+  left: 50%;
+  top: 38px;
+  transform: translateX(-50%);
+  padding: 10px 18px;
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 15px;
+  background: rgba(23, 60, 49, 0.95);
+  box-shadow: 0 15px 40px rgba(23, 60, 49, 0.22);
+  backdrop-filter: blur(18px);
+  font-size: 12px;
+  animation: plan-notice-in 380ms var(--ease) both;
+}
+
+.plan-composer-backdrop {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(12, 26, 22, 0.38);
+  backdrop-filter: blur(10px);
+  animation: plan-fade-in 220ms ease both;
+}
+
+.plan-composer {
+  width: min(560px, 100%);
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 28px;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 85% 8%, rgba(217, 229, 216, 0.72), transparent 30%),
+    var(--paper);
+  box-shadow: 0 28px 80px rgba(14, 30, 25, 0.28);
+  animation: plan-sheet-in 420ms var(--ease) both;
+}
+
+.plan-composer > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.plan-composer > header span {
+  color: var(--ink-faint);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.plan-composer > header h2 {
+  margin: 5px 0 0;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.plan-composer > header button {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  color: var(--ink-soft);
+  background: rgba(21, 36, 31, 0.055);
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.plan-composer form {
+  display: grid;
+  gap: 16px;
+}
+
+.plan-composer label {
+  display: grid;
+  gap: 7px;
+}
+
+.plan-composer label > span {
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.plan-composer input {
+  width: 100%;
+  height: 50px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--ink);
+  outline: 0;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.plan-title-field input {
+  height: 58px;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 18px;
+}
+
+.plan-composer input:focus {
+  border-color: rgba(196, 108, 77, 0.55);
+  box-shadow: 0 0 0 4px rgba(196, 108, 77, 0.1);
+}
+
+.plan-field-row {
+  display: grid;
+  grid-template-columns: 1fr 0.75fr;
+  gap: 12px;
+}
+
+.duration-choices {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.duration-choices button {
+  height: 46px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, 0.34);
+  cursor: pointer;
+}
+
+.duration-choices button[aria-pressed="true"] {
+  color: var(--white);
+  border-color: var(--moss);
+  background: var(--moss);
+}
+
+.duration-choices small {
+  font-size: 8px;
+}
+
+.plan-save-button {
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 15px;
+  color: var(--white);
+  background: var(--moss);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.plan-save-button i {
+  font-style: normal;
+  font-size: 20px;
+}
+
+.plan-composer form > p {
+  margin: -4px 0 0;
+  color: var(--ink-faint);
+  text-align: center;
+  font-size: 9px;
+}
+
+.bottom-nav .glyph-plan {
+  font-size: 15px;
+}
+
+@keyframes plan-blink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.76); }
+}
+
+@keyframes plan-notice-in {
+  from { opacity: 0; transform: translate(-50%, -10px) scale(0.97); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+@keyframes plan-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes plan-sheet-in {
+  from { opacity: 0; transform: translateY(35px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 940px) {
+  .planner-screen {
+    width: min(720px, calc(100% - 44px));
+  }
+
+  .planner-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .current-plan-card,
+  .day-agenda {
+    min-height: 430px;
+  }
+
+  .agenda-list {
+    max-height: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .planner-screen {
+    width: calc(100% - 28px);
+    padding: 22px 0 38px;
+  }
+
+  .planner-heading {
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .planner-heading h1 {
+    margin: 7px 0 5px;
+    font-size: clamp(28px, 8.6vw, 37px);
+    line-height: 1.15;
+  }
+
+  .planner-heading p {
+    display: none;
+  }
+
+  .planner-heading .eyebrow {
+    font-size: 8px;
+  }
+
+  .plan-add-button {
+    min-width: 48px;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border-radius: 15px;
+    overflow: hidden;
+    color: transparent;
+  }
+
+  .plan-add-button span {
+    color: var(--white);
+    font-size: 24px;
+  }
+
+  .planner-grid {
+    gap: 13px;
+  }
+
+  .current-plan-card {
+    min-height: 390px;
+    padding: 19px 18px 20px;
+    border-radius: 26px;
+  }
+
+  .current-plan-copy {
+    margin-top: 20px;
+  }
+
+  .current-plan-copy h2,
+  .plan-empty-focus h2 {
+    font-size: 26px;
+  }
+
+  .plan-timer-stage {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    padding-top: 14px;
+  }
+
+  .plan-timer-ring {
+    width: 188px;
+  }
+
+  .plan-timer-ring strong {
+    font-size: 31px;
+  }
+
+  .timer-actions {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .timer-actions button {
+    min-height: 42px;
+  }
+
+  .timer-actions button:only-child {
+    grid-column: 1 / -1;
+  }
+
+  .plan-ready-stage {
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 18px;
+  }
+
+  .plan-ready-stage button,
+  .plan-empty-focus button {
+    width: 100%;
+  }
+
+  .day-agenda {
+    min-height: 330px;
+    padding: 17px 14px 14px;
+    border-radius: 24px;
+  }
+
+  .day-agenda > header > div {
+    padding: 0 8px;
+  }
+
+  .day-agenda > header strong {
+    font-size: 16px;
+  }
+
+  .agenda-content {
+    padding-left: 10px;
+  }
+
+  .agenda-content h3 {
+    max-width: 148px;
+  }
+
+  .plan-notice {
+    top: 12px;
+  }
+
+  .plan-composer-backdrop {
+    padding: 0;
+  }
+
+  .plan-composer {
+    width: 100%;
+    padding: 22px 18px max(22px, env(safe-area-inset-bottom));
+    border-radius: 28px 28px 0 0;
+  }
+
+  .plan-title-field input {
+    height: 54px;
+  }
+
+  .duration-choices {
+    gap: 6px;
+  }
+
+  .duration-choices button {
+    height: 43px;
+    font-size: 11px;
+  }
+
+  .bottom-nav button {
+    gap: 5px;
+  }
+
+  .bottom-nav button span:last-of-type {
+    font-size: 10px;
+  }
+}
+
+@media (max-height: 720px) and (max-width: 620px) {
+  .planner-heading {
+    margin-bottom: 12px;
+  }
+
+  .current-plan-card {
+    min-height: 350px;
+  }
+
+  .plan-timer-ring {
+    width: 165px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-running .current-plan-meta > span i {
+    animation: none;
+  }
+}
