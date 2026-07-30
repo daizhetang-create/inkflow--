@@ -5,13 +5,15 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
+  {
+    files: ["app/FocusApp.tsx", "app/InkflowOpening.tsx", "app/FlowApp.tsx"],
+    rules: {
+      "react-hooks/set-state-in-effect": "off"
+    },
+  },
   globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
+    ".next/**", "out/**", "build/**", "next-env.d.ts",
+    "design/**", "docs/**", "video/**", ".venv/**"
   ]),
 ]);
 

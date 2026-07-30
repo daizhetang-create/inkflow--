@@ -1,6 +1,6 @@
 {
-  "name": "inkflow-focus",
-  "version": "0.1.0",
+  "name": "inkflow-daily-attention",
+  "version": "0.3.0",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
@@ -9,7 +9,7 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "test": "npm run build && node --test",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
   },
@@ -38,5 +38,5 @@
     "wrangler": "4.92.0"
   },
   "type": "module",
-  "description": "为深度阅读设计的流动专注计时器"
+  "description": "墨流：实时记录意图、走神、打断与回来的日常注意力应用。"
 }

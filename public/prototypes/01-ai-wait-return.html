@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>墨流原型 01｜AI 等待回流门</title>
+  <style>
+    :root{--bg:#111210;--panel:#191a17;--text:#f4f0e8;--muted:#97998f;--signal:#ff6a3d;--line:#383a34;--ok:#b8e986;--ease:cubic-bezier(.2,.8,.2,1)}
+    *{box-sizing:border-box} body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:Inter,"Segoe UI","PingFang SC",sans-serif}
+    button,input{font:inherit} button{cursor:pointer}.shell{min-height:100vh;display:grid;grid-template-rows:auto 1fr auto;padding:24px clamp(20px,5vw,72px)}
+    header,footer{display:flex;justify-content:space-between;gap:24px;color:var(--muted);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+    .brand{color:var(--text);font-weight:750}.brand b{color:var(--signal)} main{display:grid;align-items:center;max-width:1180px;width:100%;margin:auto}
+    .view{display:none;animation:arrive .45s var(--ease)}.view.active{display:grid}.step{color:var(--signal);font:600 12px ui-monospace,monospace;letter-spacing:.16em}
+    h1{font-size:clamp(42px,7vw,92px);line-height:.95;letter-spacing:-.06em;margin:18px 0 22px;max-width:900px}p{color:var(--muted);font-size:17px;line-height:1.7;max-width:680px}
+    .form{margin-top:36px;display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}.field{display:grid;gap:9px}.field label{font-size:12px;color:var(--muted)}
+    input{width:100%;background:transparent;color:var(--text);border:0;border-bottom:1px solid var(--line);padding:13px 2px;outline:none}input:focus{border-color:var(--signal)}
+    .primary,.quiet{border:1px solid var(--signal);min-height:50px;padding:0 22px;background:var(--signal);color:#1b100b;font-weight:760}.quiet{background:transparent;color:var(--text);border-color:var(--line)}
+    .primary:focus-visible,.quiet:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:3px}.honesty{margin-top:16px;color:var(--muted);font:12px ui-monospace,monospace}
+    .rail{position:relative;height:150px;margin:35px 0 28px}.rail:before,.rail:after{content:"";position:absolute;top:72px;height:2px;background:var(--signal);transition:width .8s var(--ease)}
+    .rail:before{left:0;width:38%}.rail:after{right:0;width:0}.rail.returning:after{width:38%}.rail.connected:before{width:50%}.rail.connected:after{width:50%}
+    .packet{position:absolute;left:0;top:26px;max-width:38%;font-size:14px;color:var(--text)}.packet span{display:block;color:var(--muted);font:11px ui-monospace,monospace;margin-bottom:8px}
+    .gap{position:absolute;left:50%;top:63px;transform:translateX(-50%);color:var(--muted);font:11px ui-monospace,monospace}.pulse{width:14px;height:14px;border:2px solid var(--signal);border-radius:50%;position:absolute;right:0;top:66px}
+    .waiting-grid{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:end}.micro{display:flex;gap:8px;flex-wrap:wrap}.micro button{background:transparent;color:var(--muted);border:1px solid var(--line);padding:10px 14px}.micro button.selected{color:var(--text);border-color:var(--signal)}
+    .return-action{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}.next{color:var(--signal)}.review-options{display:flex;gap:10px;flex-wrap:wrap;margin-top:30px}.review-options button{min-width:120px}
+    .result{font:600 clamp(28px,4vw,52px) ui-monospace,monospace;color:var(--ok);margin:24px 0}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+    @keyframes arrive{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}@media(max-width:760px){.form{grid-template-columns:1fr}.waiting-grid{grid-template-columns:1fr}.packet{max-width:70%}h1{font-size:48px}}
+    @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header><div class="brand">墨流 <b>/</b> PROTOTYPE 01</div><div>Return Gate · 明确模拟</div></header>
+  <main>
+    <section class="view active" data-view="start">
+      <span class="step">01 / 封存</span><h1>AI 在生成。<br>先留下你回来后的第一步。</h1>
+      <p>这不是计时器。你只需要把未来的自己带回正确的位置。</p>
+      <form class="form" id="checkpoint-form">
+        <div class="field"><label for="intent">现在要完成什么</label><input id="intent" value="完成墨流 vNext 的状态机" maxlength="80" /></div>
+        <div class="field"><label for="next">回来后的第一步</label><input id="next" value="先跑 reducer 的失败路径测试" maxlength="120" required /></div>
+        <button class="primary" type="submit">封存并离开 →</button>
+      </form><div class="honesty">SIMULATION · 20 秒研究原型，可手动提前完成</div>
+    </section>
+    <section class="view" data-view="waiting" aria-live="polite">
+      <span class="step">02 / 间隙</span><h1>下一步已经在这里。<br>你不必继续抓住它。</h1>
+      <div class="rail"><div class="packet"><span>CHECKPOINT SAVED</span><strong id="saved-next"></strong></div><div class="gap" id="countdown">20s</div><i class="pulse"></i></div>
+      <div class="waiting-grid"><div><p id="micro-copy">选择留白，或者只做一个不会带走上下文的动作。</p><div class="micro"><button type="button" data-action="blank">只留白</button><button type="button" data-action="look">看远处 20 秒</button><button type="button" data-action="prompt">整理下一条 Prompt</button></div></div><button class="quiet" id="finish-now" type="button">标记任务已完成</button></div>
+    </section>
+    <section class="view" data-view="return">
+      <span class="step">03 / 接回 · 模拟完成</span><h1>不用重读一切。<br><span class="next" id="return-next"></span></h1>
+      <div class="rail returning" id="return-rail"><div class="packet"><span>RETURN PACKET</span><strong id="return-packet"></strong></div><div class="gap">等待接管</div></div>
+      <div class="return-action"><button class="primary" id="reconnect" type="button">接回这一步 →</button><button class="quiet" id="reroute" type="button">目的变了</button></div>
+    </section>
+    <section class="view" data-view="review">
+      <span class="step">04 / 轻复盘</span><h1>上下文回来了吗？</h1><p>没有分数，也没有连续签到。这个答案只帮助下一次回流更轻。</p>
+      <div class="review-options"><button class="quiet" data-recall="完整">完整</button><button class="quiet" data-recall="一部分">一部分</button><button class="quiet" data-recall="没回来">没回来</button><button class="quiet" data-recall="跳过">跳过</button></div>
+      <div class="result" id="result"></div><button class="primary" id="restart" hidden type="button">再演示一次</button>
+    </section>
+  </main>
+  <footer><span>所有内容仅在本页内存中</span><span id="status">Idle → Intention</span></footer>
+</div>
+<script>
+  const views=[...document.querySelectorAll('.view')], status=document.querySelector('#status');let timer,startedAt=0,packet='';
+  function show(name,label){views.forEach(v=>v.classList.toggle('active',v.dataset.view===name));status.textContent=label}
+  document.querySelector('#checkpoint-form').addEventListener('submit',e=>{e.preventDefault();packet=document.querySelector('#next').value.trim();if(!packet)return;document.querySelector('#saved-next').textContent=packet;startedAt=Date.now();show('waiting','Waiting · checkpoint_saved');let left=20;document.querySelector('#countdown').textContent=left+'s';timer=setInterval(()=>{left-=1;document.querySelector('#countdown').textContent=left+'s';if(left<=0)complete()},1000)});
+  function complete(){clearInterval(timer);document.querySelector('#return-next').textContent=packet;document.querySelector('#return-packet').textContent=packet;show('return','Return · simulation_completed')}
+  document.querySelector('#finish-now').onclick=complete;
+  document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-action]').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');document.querySelector('#micro-copy').textContent=b.dataset.action==='blank'?'什么都不做也是一次完整选择。':b.textContent+'。做完就停，不继续推荐。'});
+  document.querySelector('#reconnect').onclick=()=>{document.querySelector('#return-rail').classList.add('connected');setTimeout(()=>show('review','Review · return_confirmed'),350)};
+  document.querySelector('#reroute').onclick=()=>{document.querySelector('#return-next').textContent='先重新确认：目的还一样吗？'};
+  document.querySelectorAll('[data-recall]').forEach(b=>b.onclick=()=>{const s=Math.max(1,Math.round((Date.now()-startedAt)/1000));document.querySelector('#result').textContent=`${s} 秒接回 · ${b.dataset.recall}`;document.querySelector('#restart').hidden=false;status.textContent='Active · context_recalled'});
+  document.querySelector('#restart').onclick=()=>{document.querySelector('#result').textContent='';document.querySelector('#restart').hidden=true;show('start','Idle → Intention')};
+</script>
+</body></html>
+
