@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-test("pre-caches the vNext shell and serves it when navigation is offline", async () => {
+test("pre-caches the daily attention shell and serves it when navigation is offline", async () => {
   const listeners = new Map();
   const added = [];
-  const cachedShell = new Response("offline Inkflow shell", { status: 200, headers: { "content-type": "text/html" } });
+  const cachedShell = new Response("offline Inkflow daily shell", { status: 200, headers: { "content-type": "text/html" } });
   globalThis.self = {
     location: { origin: "http://localhost" },
     addEventListener(type, handler) { listeners.set(type, handler); },
@@ -12,10 +12,7 @@ test("pre-caches the vNext shell and serves it when navigation is offline", asyn
     clients: { claim() {} },
   };
   globalThis.caches = {
-    open: async () => ({
-      addAll: async (urls) => added.push(...urls),
-      put: async () => undefined,
-    }),
+    open: async () => ({ addAll: async (urls) => added.push(...urls), put: async () => undefined }),
     keys: async () => [],
     delete: async () => true,
     match: async (request) => request === "/" ? cachedShell.clone() : undefined,
@@ -26,7 +23,7 @@ test("pre-caches the vNext shell and serves it when navigation is offline", asyn
     let installWork;
     listeners.get("install")({ waitUntil(promise) { installWork = promise; } });
     await installWork;
-    assert.deepEqual(added, ["/", "/manifest.webmanifest", "/og-vnext.png"]);
+    assert.deepEqual(added, ["/", "/manifest.webmanifest", "/favicon.svg"]);
 
     globalThis.fetch = async () => { throw new Error("offline"); };
     let responsePromise;
@@ -36,7 +33,7 @@ test("pre-caches the vNext shell and serves it when navigation is offline", asyn
     });
     const response = await responsePromise;
     assert.equal(response.status, 200);
-    assert.equal(await response.text(), "offline Inkflow shell");
+    assert.equal(await response.text(), "offline Inkflow daily shell");
   } finally {
     globalThis.fetch = onlineFetch;
     delete globalThis.self;

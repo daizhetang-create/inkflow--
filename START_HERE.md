@@ -1,29 +1,27 @@
-# START HERE｜墨流 vNext
+# START HERE｜墨流 0.3
 
-## 本地启动
+## 先看产品
 
 ```powershell
-npm.cmd install
 npm.cmd run dev
 ```
 
-打开 `http://localhost:3000`。
+首页真正的最短路径是：
 
-## 质量检查
+`写一句此刻要做什么 → 开始记录 → 一击留下走神/打断/回来 → 结束这一段 → 看见今天`
+
+计时是辅助信息，不是产品主流程。
+
+## 再做验证
 
 ```powershell
 npm.cmd run lint
 npm.cmd test
 ```
 
-## 产品最短路径
+## 接手前必须知道
 
-选择 AI 任务 → 写正在等待什么 → 写回来第一步 → 选择手动或模拟 → 封存 → 留白/恢复 → 完成或失败 → 接回 → 完成第一步 → Review。
-
-## 数据与隐私
-
-所有新版数据使用 `inkflow:vnext:*` 保存在当前浏览器；清除 vNext 数据不会触碰旧版 `inkflow:sessions` 或设置。
-
-## 旧版恢复
-
-旧版主线基点为 `bb684f9`。不要删除 `FocusApp.tsx`、`InkflowOpening.tsx` 或 `public/inkflow-opening/`；它们是可恢复资产，不是新版入口。
+- 当前产品定义见 `docs/product/Z_daily_attention_rebuild.md`。
+- 当前入口是 `app/page.tsx → AttentionRoot → AttentionApp`。
+- 正式数据使用 D1，浏览器仅作离线缓存和补传队列。
+- 旧阅读计时器、开场动画与 Return Gate 都保留为 legacy，不要恢复为主入口。

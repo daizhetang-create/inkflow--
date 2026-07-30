@@ -1,98 +1,50 @@
-# vinext-starter
+# 墨流 Inkflow
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+墨流是一款日常注意力记录应用。它不要求用户先学会一套专注方法，也不把倒计时当作产品中心：写下此刻要做的事之后，用户可以在事情进行中一击记录走神、打断、念头和恢复，结束时留下结果与下一步，当天自动形成可读的注意力时间线。
 
-## Prerequisites
+## 当前产品闭环
 
-- Node.js `>=22.13.0`
+1. 写一句“我现在要做什么”。
+2. 选择当前状态；时间边界可以不设。
+3. 进行中随时记录走神、打断、念头或进入九十秒恢复。
+4. 散开后主动记录“我回来了”，不重新做计划。
+5. 结束时选择完成、推进或暂停，并给未来的自己留一句话。
+6. 在“今天”看见真实轨迹；记录满三天后，“规律”才会给出有证据的建议。
 
-## Quick Start
+## 本地启动
 
-```bash
-npm install
-npm run dev
-npm run build
+```powershell
+npm.cmd install
+npm.cmd run dev
 ```
 
-This starter does not use `wrangler.jsonc`.
+打开终端显示的本地地址，通常是 `http://localhost:3000/`。
 
-## Included Shape
+## 质量检查
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```powershell
+npm.cmd run lint
+npm.cmd test
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+`npm test` 会完成生产构建，并验证实时记录闭环、D1 持久化、身份隔离、PWA 离线壳、响应式与 legacy 恢复资产。
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+## 数据与身份
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+- 正式记录保存在 Cloudflare D1；`.openai/hosting.json` 使用 `DB` 绑定。
+- 写入按平台转发的 `oai-authenticated-user-email` 隔离。
+- 本地开发使用明确的 `local-preview` 身份。
+- 浏览器只保存即时缓存与待同步队列；离线时可继续记录，联网后补传。
+- 墨流不读取浏览历史、屏幕、Prompt 或其他应用，也不会根据页面隐藏擅自判断用户走神。
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+## 主要文件
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+- `app/AttentionApp.tsx`：当前完整产品与交互。
+- `app/attention/store.ts`：离线缓存、补传队列与云端合并。
+- `app/api/attention/route.ts`：D1 读写与所有者隔离。
+- `db/schema.ts` / `drizzle/0000_flaky_medusa.sql`：正式数据结构与迁移。
+- `docs/product/Z_daily_attention_rebuild.md`：从用户真实需求倒推的本轮产品定义。
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+## 旧版资产
 
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+`FocusApp.tsx`、`FlowApp.tsx`、`InkflowOpening.tsx` 和 `public/inkflow-opening/` 是可恢复的旧版本资产，但都不再是当前入口。不要把旧计时器或 Return Gate 的测试结论当作当前产品定义。

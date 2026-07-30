@@ -10,29 +10,32 @@ const mediaContract = [
   ["public/inkflow-opening/end-frame.png", 2_030_262, "CC8CFFAEF72109E01F95C38759D5EF90313AD81ABFFB144AFBFE883C6EE8EE1F"],
 ];
 
-test("preserves the approved v0.1 opening media as a recoverable legacy asset", async () => {
+test("preserves approved opening and previous product versions as recoverable assets", async () => {
   for (const [path, bytes, sha256] of mediaContract) {
     const url = new URL(path, projectRoot);
     const [details, contents] = await Promise.all([stat(url), readFile(url)]);
     assert.equal(details.size, bytes, `${path} byte size`);
     assert.equal(createHash("sha256").update(contents).digest("hex").toUpperCase(), sha256, `${path} sha256`);
   }
+  await Promise.all([
+    stat(new URL("app/FocusApp.tsx", projectRoot)),
+    stat(new URL("app/FlowApp.tsx", projectRoot)),
+    stat(new URL("app/InkflowOpening.tsx", projectRoot)),
+  ]);
 });
 
-test("vNext starts at a deterministic Return Gate shell while retaining legacy code", async () => {
-  const [page, root, opening, focus, serviceWorker] = await Promise.all([
+test("the product entry is the daily attention record, not a timer or Return Gate", async () => {
+  const [page, root, app] = await Promise.all([
     readFile(new URL("app/page.tsx", projectRoot), "utf8"),
-    readFile(new URL("app/FlowRoot.tsx", projectRoot), "utf8"),
-    readFile(new URL("app/InkflowOpening.tsx", projectRoot), "utf8"),
-    readFile(new URL("app/FocusApp.tsx", projectRoot), "utf8"),
-    readFile(new URL("public/sw.js", projectRoot), "utf8"),
+    readFile(new URL("app/AttentionRoot.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/AttentionApp.tsx", projectRoot), "utf8"),
   ]);
-  assert.match(page, /<FlowRoot\s*\/>/);
-  assert.doesNotMatch(page, /InkflowOpening|FocusApp/);
+  assert.match(page, /<AttentionRoot viewer=\{viewer\}/);
+  assert.match(page, /getChatGPTUser/);
+  assert.doesNotMatch(page, /FlowRoot|FocusApp|InkflowOpening/);
+  assert.match(root, /你现在，[\s\S]*把注意力放在哪里/);
   assert.match(root, /useSyncExternalStore/);
-  assert.match(root, /<FlowApp\s*\/>/);
-  assert.match(opening, /inkflow:opening-complete/);
-  assert.match(focus, /inkflow:sessions/);
-  assert.match(serviceWorker, /inkflow-vnext-v2/);
-  assert.doesNotMatch(serviceWorker, /inkflow-opening/);
+  assert.match(app, /开始记录这一段/);
+  assert.match(app, /发生了什么，就点一下/);
+  assert.doesNotMatch(app, /RETURN GATE|开始沉浸|番茄/);
 });

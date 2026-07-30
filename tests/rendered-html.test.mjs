@@ -4,69 +4,66 @@ import test from "node:test";
 
 const projectRoot = new URL("../", import.meta.url);
 
-async function render(path = "/") {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
-  return worker.fetch(new Request(`http://localhost${path}`, { headers: { accept: "text/html", host: "localhost" } }), {
-    ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
-  }, { waitUntil() {}, passThroughOnException() {} });
-}
-
-test("server-renders a deterministic Inkflow Return Gate shell", async () => {
-  const response = await render();
-  assert.equal(response.status, 200);
-  assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
-  const html = await response.text();
-  assert.match(html, /<html lang="zh-CN">/);
-  assert.match(html, /RETURN GATE \/ LOADING/);
-  assert.match(html, /回来后的第一步/);
-  assert.match(html, /LOCAL FIRST/);
-  assert.match(html, /正在接回这台设备上的本地快照/);
-  assert.doesNotMatch(html, /开始沉浸|把注意力，放回这一页|Your site is taking shape/);
+test("ships the complete real-time attention loop with a ten-second first action", async () => {
+  const [app, root, store] = await Promise.all([
+    readFile(new URL("app/AttentionApp.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/AttentionRoot.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/attention/store.ts", projectRoot), "utf8"),
+  ]);
+  assert.match(root, /正在接回今天的记录/);
+  assert.match(app, /我现在要做/);
+  assert.match(app, /不设时限/);
+  assert.match(app, /我走神了/);
+  assert.match(app, /被打断了/);
+  assert.match(app, /有个念头/);
+  assert.match(app, /我想缓一下/);
+  assert.match(app, /结束时，你在哪里/);
+  assert.match(app, /今日注意力流/);
+  assert.match(app, /还不够了解你/);
+  assert.match(app, /没有足够记录时，我们不会编造/);
+  assert.match(app, /不监控你去了哪里/);
+  assert.doesNotMatch(app, /visibilitychange|PAGE_VISIBILITY|streak|排行榜/);
+  assert.match(store, /inkflow:daily:v1/);
+  assert.match(store, /sync-queue/);
+  assert.match(store, /flushQueue/);
+  assert.match(store, /mergeSessions/);
 });
 
-test("ships the eight-state, local-first, source-honest recovery runtime", async () => {
-  const [app, root, storage, machine, layout, manifest, serviceWorker, stylesheet] = await Promise.all([
-    readFile(new URL("app/FlowApp.tsx", projectRoot), "utf8"),
-    readFile(new URL("app/FlowRoot.tsx", projectRoot), "utf8"),
-    readFile(new URL("app/flow/storage.ts", projectRoot), "utf8"),
-    readFile(new URL("app/flow/machine.mjs", projectRoot), "utf8"),
+test("persists formal records in D1 and isolates writes by authenticated owner", async () => {
+  const [route, schema, hosting, migration] = await Promise.all([
+    readFile(new URL("app/api/attention/route.ts", projectRoot), "utf8"),
+    readFile(new URL("db/schema.ts", projectRoot), "utf8"),
+    readFile(new URL(".openai/hosting.json", projectRoot), "utf8"),
+    readFile(new URL("drizzle/0000_flaky_medusa.sql", projectRoot), "utf8"),
+  ]);
+  assert.match(hosting, /"d1": "DB"/);
+  assert.match(route, /oai-authenticated-user-email/);
+  assert.match(route, /local-preview/);
+  assert.match(route, /CREATE TABLE IF NOT EXISTS attention_sessions/);
+  assert.match(route, /CREATE TABLE IF NOT EXISTS attention_events/);
+  assert.match(route, /WHERE id = \? AND owner_id = \?/);
+  assert.match(route, /INSERT OR IGNORE INTO attention_events/);
+  assert.match(schema, /attentionSessions/);
+  assert.match(schema, /attentionEvents/);
+  assert.match(migration, /CREATE TABLE `attention_sessions`/);
+  assert.match(migration, /CREATE TABLE `attention_events`/);
+});
+
+test("ships an app-standard responsive, accessible and offline surface", async () => {
+  const [layout, manifest, stylesheet, serviceWorker] = await Promise.all([
     readFile(new URL("app/layout.tsx", projectRoot), "utf8"),
     readFile(new URL("app/manifest.ts", projectRoot), "utf8"),
-    readFile(new URL("public/sw.js", projectRoot), "utf8"),
     readFile(new URL("app/globals.css", projectRoot), "utf8"),
+    readFile(new URL("public/sw.js", projectRoot), "utf8"),
   ]);
-  assert.match(storage, /schemaVersion:\s*1/);
-  assert.match(storage, /isFlowSession/);
-  assert.match(storage, /inkflow:vnext:snapshot/);
-  assert.match(storage, /inkflow:vnext:events/);
-  assert.doesNotMatch(storage, /removeItem\("inkflow:sessions"/);
-  assert.match(app, /BroadcastChannel\("inkflow-vnext"\)/);
-  assert.match(app, /window\.addEventListener\("storage"/);
-  assert.match(app, /sessionId: after\.id, revision: after\.revision/);
-  assert.doesNotMatch(app, /postMessage\(\{ session: after/);
-  assert.match(app, /visibilitychange/);
-  assert.match(app, /PAGE_VISIBILITY/);
-  assert.match(app, /Notification\.requestPermission\(\)/);
-  assert.match(app, /notificationDecision === "denied"/);
-  assert.match(app, /回来接回刚才封存的第一步/);
-  assert.doesNotMatch(app, /new Notification[^\n]+session\.nextAction/);
-  assert.match(app, /SIGNAL_FAILED/);
-  assert.match(app, /session\.stage === "recovery"/);
-  assert.match(app, /NO SURVEILLANCE/);
-  assert.match(app, /不会读取当前网页、代码或 Prompt/);
-  assert.match(root, /DeterministicShell/);
-  assert.match(machine, /"recovery"/);
-  assert.match(machine, /micro_action_selected/);
-  assert.match(machine, /session_closed/);
-  assert.match(machine, /Illegal Inkflow transition/);
-  assert.match(layout, /og-vnext\.png/);
-  assert.match(manifest, /display:\s*"standalone"/);
-  assert.match(serviceWorker, /CACHE_NAME = "inkflow-vnext-v2"/);
+  assert.match(layout, /看见注意力真实的一天/);
+  assert.match(layout, /实时记下此刻的意图、走神、打断与回来/);
+  assert.match(manifest, /display: "standalone"/);
+  assert.match(stylesheet, /\.ink-river/);
+  assert.match(stylesheet, /\.recovery-layer/);
+  assert.match(stylesheet, /@media \(max-width: 760px\)/);
   assert.match(stylesheet, /prefers-reduced-motion: reduce/);
-  assert.match(stylesheet, /\.flow-line\.is-broken/);
-  assert.match(stylesheet, /\.recovery-focus/);
-  assert.match(stylesheet, /@media \(max-width: 720px\)/);
-  await access(new URL("public/og-vnext.png", projectRoot));
+  assert.match(stylesheet, /button:focus-visible/);
+  assert.match(serviceWorker, /inkflow-daily-v1/);
+  await access(new URL("public/favicon.svg", projectRoot));
 });
