@@ -13,7 +13,8 @@ const eslintConfig = defineConfig([
   },
   globalIgnores([
     ".next/**", "out/**", "build/**", "next-env.d.ts",
-    "design/**", "docs/**", "video/**", ".venv/**"
+    "design/**", "docs/**", "video/**", ".venv/**",
+    ".sites-stage-*/**", ".sites-artifacts/**", ".codex-backups/**"
   ]),
 ]);
 

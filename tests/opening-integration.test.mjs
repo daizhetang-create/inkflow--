@@ -24,7 +24,7 @@ test("preserves approved opening and previous product versions as recoverable as
   ]);
 });
 
-test("the product entry is the daily attention record, not a timer or Return Gate", async () => {
+test("the product entry is a one-touch daily attention record, not a timer or setup flow", async () => {
   const [page, root, app] = await Promise.all([
     readFile(new URL("app/page.tsx", projectRoot), "utf8"),
     readFile(new URL("app/AttentionRoot.tsx", projectRoot), "utf8"),
@@ -35,7 +35,8 @@ test("the product entry is the daily attention record, not a timer or Return Gat
   assert.doesNotMatch(page, /FlowRoot|FocusApp|InkflowOpening/);
   assert.match(root, /你现在，[\s\S]*把注意力放在哪里/);
   assert.match(root, /useSyncExternalStore/);
-  assert.match(app, /开始记录这一段/);
-  assert.match(app, /发生了什么，就点一下/);
-  assert.doesNotMatch(app, /RETURN GATE|开始沉浸|番茄/);
+  assert.match(app, /一键开始记录/);
+  assert.match(app, /我回来了/);
+  assert.match(app, /顺手记下/);
+  assert.doesNotMatch(app, /RETURN GATE|开始沉浸|番茄|开始前的状态|时间边界/);
 });

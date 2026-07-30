@@ -4,24 +4,26 @@ import test from "node:test";
 
 const projectRoot = new URL("../", import.meta.url);
 
-test("ships the complete real-time attention loop with a ten-second first action", async () => {
+test("ships a one-touch daily attention loop instead of a setup form", async () => {
   const [app, root, store] = await Promise.all([
     readFile(new URL("app/AttentionApp.tsx", projectRoot), "utf8"),
     readFile(new URL("app/AttentionRoot.tsx", projectRoot), "utf8"),
     readFile(new URL("app/attention/store.ts", projectRoot), "utf8"),
   ]);
   assert.match(root, /正在接回今天的记录/);
-  assert.match(app, /我现在要做/);
-  assert.match(app, /不设时限/);
-  assert.match(app, /我走神了/);
-  assert.match(app, /被打断了/);
-  assert.match(app, /有个念头/);
-  assert.match(app, /我想缓一下/);
-  assert.match(app, /结束时，你在哪里/);
-  assert.match(app, /今日注意力流/);
-  assert.match(app, /还不够了解你/);
-  assert.match(app, /没有足够记录时，我们不会编造/);
-  assert.match(app, /不监控你去了哪里/);
+  assert.match(app, /不填、不选，也能留下这一刻/);
+  assert.match(app, /一键开始记录/);
+  assert.match(app, /我回来了/);
+  assert.match(app, /recordReturnPulse/);
+  assert.match(app, /被打断/);
+  assert.match(app, /留个念头/);
+  assert.match(app, /缓一下/);
+  assert.match(app, /收好这一段/);
+  assert.match(app, /默认不设时限/);
+  assert.match(app, /没有倒计时/);
+  assert.match(app, /墨流先观察，再开口/);
+  assert.match(app, /不读取浏览记录、屏幕或其他应用/);
+  assert.doesNotMatch(app, /ENERGY_OPTIONS|TARGET_OPTIONS|end-sheet|outcome-grid|结束时，你在哪里/);
   assert.doesNotMatch(app, /visibilitychange|PAGE_VISIBILITY|streak|排行榜/);
   assert.match(store, /inkflow:daily:v1/);
   assert.match(store, /sync-queue/);
@@ -59,9 +61,11 @@ test("ships an app-standard responsive, accessible and offline surface", async (
   assert.match(layout, /看见注意力真实的一天/);
   assert.match(layout, /实时记下此刻的意图、走神、打断与回来/);
   assert.match(manifest, /display: "standalone"/);
-  assert.match(stylesheet, /\.ink-river/);
+  assert.match(stylesheet, /\.pulse-control/);
+  assert.match(stylesheet, /\.context-strip/);
+  assert.match(stylesheet, /\.bottom-nav/);
   assert.match(stylesheet, /\.recovery-layer/);
-  assert.match(stylesheet, /@media \(max-width: 760px\)/);
+  assert.match(stylesheet, /@media \(max-width: 620px\)/);
   assert.match(stylesheet, /prefers-reduced-motion: reduce/);
   assert.match(stylesheet, /button:focus-visible/);
   assert.match(serviceWorker, /inkflow-daily-v1/);
