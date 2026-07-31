@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./planner.css";
+import "./native-app.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://inkflow-reading-2026.chichub.chatgpt.site"),
@@ -15,13 +16,13 @@ export const metadata: Metadata = {
     description: "安排时间、开始任务、暂停与完成，让今天的每一段都更容易真正开始。",
     type: "website",
     locale: "zh_CN",
-    images: [{ url: "/og-planner.png", width: 1536, height: 1024, alt: "墨流 Inkflow 今日时间计划" }],
+    images: [{ url: "/og-native-v5.png", width: 1536, height: 1024, alt: "墨流 Inkflow · 今天，只看下一段" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "墨流 Inkflow",
     description: "先安排今天，再从一段真实行动开始。",
-    images: ["/og-planner.png"],
+    images: ["/og-native-v5.png"],
   },
 };
 
@@ -29,7 +30,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#f2efe7",
+  themeColor: "#efede7",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -285,25 +285,31 @@ export function PlannerView({ viewer }: { viewer: Viewer }) {
       {notice && <div className="plan-notice" role="status">{notice}</div>}
 
       <header className="planner-heading">
-        <div>
+        <div className="planner-title-block">
           <span className="eyebrow">{dateLabel(new Date())} · TODAY</span>
-          <h1>把今天，<br/><em>排成可以开始的几段。</em></h1>
-          <p>先解决今天怎么用，不急着定义永远。</p>
+          <div className="planner-title-line">
+            <h1>今天</h1>
+            <span className="planner-day-status">{todayItems.length ? `${completedCount} / ${todayItems.length} 已收好` : "一整天还在等你"}</span>
+          </div>
+          <p>只看下一段。其他时间，沿着墨线排开。</p>
         </div>
-        <button className="plan-add-button" onClick={openComposer}><span>＋</span>安排一段</button>
+        <button className="plan-add-button" onClick={openComposer} aria-label="新建一段计划"><span>＋</span><b>新建</b></button>
       </header>
 
       <div className="planner-grid">
-        <article className={`current-plan-card ${focusItem?.status === "active" ? "is-running" : ""} ${currentRemaining <= 0 && activeItem ? "is-overtime" : ""}`}>
-          <div className="current-plan-meta">
-            <span><i/>{focusState}</span>
-            <button onClick={() => syncPlans(true)}>{syncLabel}</button>
+        <article aria-live="polite" className={`current-plan-card ${focusItem?.status === "active" ? "is-running" : ""} ${focusItem?.status === "paused" ? "is-paused" : ""} ${currentRemaining <= 0 && activeItem ? "is-overtime" : ""}`}>
+          <div className="current-plan-topline">
+            <div className="current-plan-meta">
+              <span><i/>{focusState}</span>
+              <button onClick={() => syncPlans(true)}>{syncLabel}</button>
+            </div>
+            <span className="current-plan-index" aria-hidden="true">NOW</span>
           </div>
 
           {focusItem ? (
             <>
               <div className="current-plan-copy">
-                <span>{clockLabel(focusItem.plannedStart)} — {clockLabel(endTime(focusItem))} · {focusItem.durationMinutes} 分钟</span>
+                <div className="plan-window"><span>{clockLabel(focusItem.plannedStart)}</span><i/><span>{clockLabel(endTime(focusItem))}</span><small>{focusItem.durationMinutes} 分钟</small></div>
                 <h2>{focusItem.title}</h2>
               </div>
 
@@ -333,17 +339,17 @@ export function PlannerView({ viewer }: { viewer: Viewer }) {
           ) : (
             <div className="plan-empty-focus">
               <span>{todayItems.length ? "今天已经全部收好" : "今天还没有安排"}</span>
-              <h2>{todayItems.length ? "剩下的时间，留给你自己。" : "先放进一件真正想做的事。"}</h2>
+              <h2>{todayItems.length ? "今天，已经完整了。" : "先给今天一个起点。"}</h2>
+              <p>{todayItems.length ? "剩下的时间不需要被填满。" : "不需要排满，只安排下一件真正要做的事。"}</p>
               <button onClick={openComposer}>安排第一段 <i>→</i></button>
             </div>
           )}
         </article>
 
         <aside className="day-agenda" aria-label="今天的时间安排">
-          <header>
-            <div><span>今日时间流</span><strong>{todayItems.length}<small> 段</small></strong></div>
-            <div><span>计划</span><strong>{plannedMinutes}<small> 分钟</small></strong></div>
-            <div><span>完成</span><strong>{completedCount}<small> 段</small></strong></div>
+          <header className="agenda-heading">
+            <div><span>时间流</span><strong>{todayItems.length ? `${todayItems.length} 段` : "尚未安排"}</strong></div>
+            <p>{todayItems.length ? `${plannedMinutes} 分钟计划 · ${completedCount} 段完成` : "从下一段开始，不用排满今天。"}</p>
           </header>
 
           <div className="agenda-list">
