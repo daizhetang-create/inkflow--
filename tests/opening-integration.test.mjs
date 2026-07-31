@@ -24,27 +24,27 @@ test("preserves approved opening and previous product versions as recoverable as
   ]);
 });
 
-test("the default entry is a single next-segment interaction", async () => {
-  const [page, root, app, planner] = await Promise.all([
+test("the default entry is the simple personal today app", async () => {
+  const [page, root, app, personal] = await Promise.all([
     readFile(new URL("app/page.tsx", projectRoot), "utf8"),
     readFile(new URL("app/AttentionRoot.tsx", projectRoot), "utf8"),
     readFile(new URL("app/AttentionApp.tsx", projectRoot), "utf8"),
-    readFile(new URL("app/planner/PlannerView.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/personal/DailyApp.tsx", projectRoot), "utf8"),
   ]);
-  assert.match(page, /<AttentionRoot viewer=\{viewer\}/);
-  assert.match(page, /getChatGPTUser/);
+  assert.match(page, /<AttentionRoot\/>/);
   assert.doesNotMatch(page, /FlowRoot|FocusApp|InkflowOpening/);
-  assert.match(root, /把下一段时间，[\s\S]*交给一件事/);
+  assert.match(root, /正在接回今天/);
   assert.match(root, /useSyncExternalStore/);
-  assert.match(app, /<PlannerView viewer=\{viewer\}/);
+  assert.match(app, /<DailyApp\/>/);
   assert.doesNotMatch(app, /bottom-nav|sidebar|useState<View>/);
-  assert.match(planner, /现在开始/);
-  assert.match(planner, /排到稍后/);
-  assert.match(planner, /开始这一段/);
-  assert.match(planner, /放进今天/);
-  assert.match(planner, /暂停/);
-  assert.match(planner, /完成/);
-  assert.match(planner, /超时/);
+  assert.match(personal, /开始专注/);
+  assert.match(personal, /下一件/);
+  assert.match(personal, /今天的节奏/);
+  assert.match(personal, /吃饭与用药提醒/);
+  assert.match(personal, /睡前冥想/);
+  assert.match(personal, /收好今天/);
+  assert.match(personal, /暂停/);
+  assert.match(personal, /已服用/);
   assert.doesNotMatch(app, /一键开始记录|我回来了|顺手记下/);
-  assert.doesNotMatch(planner, /RETURN GATE|开始沉浸|番茄|开始前的状态/);
+  assert.doesNotMatch(personal, /RETURN GATE|开始沉浸|开始前的状态/);
 });

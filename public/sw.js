@@ -1,4 +1,4 @@
-const CACHE_NAME = "inkflow-daily-v3";
+const CACHE_NAME = "inkflow-personal-v7";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/favicon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -34,4 +34,15 @@ self.addEventListener("fetch", (event) => {
     if (response.ok) caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
     return response;
   })));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      const existing = clients.find((client) => new URL(client.url).origin === self.location.origin);
+      if (existing) return existing.focus();
+      return self.clients.openWindow("/");
+    }),
+  );
 });
