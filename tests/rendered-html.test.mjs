@@ -4,27 +4,16 @@ import test from "node:test";
 
 const projectRoot = new URL("../", import.meta.url);
 
-test("preserves the one-touch attention experiment without a setup form", async () => {
+test("keeps the attention data layer recoverable while removing the old surface", async () => {
   const [app, root, store] = await Promise.all([
     readFile(new URL("app/AttentionApp.tsx", projectRoot), "utf8"),
     readFile(new URL("app/AttentionRoot.tsx", projectRoot), "utf8"),
     readFile(new URL("app/attention/store.ts", projectRoot), "utf8"),
   ]);
-  assert.match(root, /正在接回今天的计划/);
-  assert.match(app, /不填、不选，也能留下这一刻/);
-  assert.match(app, /一键开始记录/);
-  assert.match(app, /我回来了/);
-  assert.match(app, /recordReturnPulse/);
-  assert.match(app, /被打断/);
-  assert.match(app, /留个念头/);
-  assert.match(app, /缓一下/);
-  assert.match(app, /收好这一段/);
-  assert.match(app, /默认不设时限/);
-  assert.match(app, /没有倒计时/);
-  assert.match(app, /墨流先观察，再开口/);
-  assert.match(app, /不读取浏览记录、屏幕或其他应用/);
-  assert.doesNotMatch(app, /ENERGY_OPTIONS|TARGET_OPTIONS|end-sheet|outcome-grid|结束时，你在哪里/);
-  assert.doesNotMatch(app, /visibilitychange|PAGE_VISIBILITY|streak|排行榜/);
+  assert.match(root, /正在接回今天/);
+  assert.match(root, /把下一段时间/);
+  assert.match(app, /PlannerView/);
+  assert.doesNotMatch(app, /一键开始记录|我回来了|recordReturnPulse|bottom-nav/);
   assert.match(store, /inkflow:daily:v1/);
   assert.match(store, /sync-queue/);
   assert.match(store, /flushQueue/);
@@ -39,11 +28,12 @@ test("ships a durable daily planning and countdown loop", async () => {
     readFile(new URL("app/api/planner/route.ts", projectRoot), "utf8"),
     readFile(new URL("db/schema.ts", projectRoot), "utf8"),
     readFile(new URL("drizzle/0001_lush_diamondback.sql", projectRoot), "utf8"),
-    readFile(new URL("app/planner.css", projectRoot), "utf8"),
+    readFile(new URL("app/zero.css", projectRoot), "utf8"),
   ]);
-  assert.match(app, /useState<View>\("plan"\)/);
   assert.match(app, /PlannerView/);
-  assert.match(planner, /安排一段/);
+  assert.match(planner, /把时间交给/);
+  assert.match(planner, /现在开始/);
+  assert.match(planner, /排到稍后/);
   assert.match(planner, /type="time"/);
   assert.match(planner, /draftDuration/);
   assert.match(planner, /startPlan/);
@@ -57,9 +47,9 @@ test("ships a durable daily planning and countdown loop", async () => {
   assert.match(route, /WHERE plan_items.owner_id = excluded.owner_id/);
   assert.match(schema, /export const planItems/);
   assert.match(migration, /CREATE TABLE .*plan_items/);
-  assert.match(stylesheet, /\.planner-grid/);
-  assert.match(stylesheet, /\.plan-timer-ring/);
-  assert.match(stylesheet, /@media \(max-width: 620px\)/);
+  assert.match(stylesheet, /\.zero-sentence/);
+  assert.match(stylesheet, /\.zero-progress/);
+  assert.match(stylesheet, /@media \(max-width: 860px\)/);
 });
 
 test("persists formal records in D1 and isolates writes by authenticated owner", async () => {
@@ -86,19 +76,19 @@ test("ships an app-standard responsive, accessible and offline surface", async (
   const [layout, manifest, stylesheet, serviceWorker] = await Promise.all([
     readFile(new URL("app/layout.tsx", projectRoot), "utf8"),
     readFile(new URL("app/manifest.ts", projectRoot), "utf8"),
-    readFile(new URL("app/globals.css", projectRoot), "utf8"),
+    readFile(new URL("app/zero.css", projectRoot), "utf8"),
     readFile(new URL("public/sw.js", projectRoot), "utf8"),
   ]);
-  assert.match(layout, /把今天排成可以开始的几段/);
-  assert.match(layout, /安排今天要做的事、开始时间与时长/);
+  assert.match(layout, /把时间交给一件事/);
+  assert.match(layout, /只决定下一段/);
   assert.match(manifest, /display: "standalone"/);
-  assert.match(stylesheet, /\.pulse-control/);
-  assert.match(stylesheet, /\.context-strip/);
-  assert.match(stylesheet, /\.bottom-nav/);
-  assert.match(stylesheet, /\.recovery-layer/);
-  assert.match(stylesheet, /@media \(max-width: 620px\)/);
+  assert.match(stylesheet, /\.zero-compose/);
+  assert.match(stylesheet, /\.zero-focus/);
+  assert.match(stylesheet, /\.zero-mobile-queue/);
+  assert.match(stylesheet, /\.zero-toast/);
+  assert.match(stylesheet, /@media \(max-width: 520px\)/);
   assert.match(stylesheet, /prefers-reduced-motion: reduce/);
   assert.match(stylesheet, /button:focus-visible/);
-  assert.match(serviceWorker, /inkflow-daily-v2/);
+  assert.match(serviceWorker, /inkflow-daily-v3/);
   await access(new URL("public/favicon.svg", projectRoot));
 });

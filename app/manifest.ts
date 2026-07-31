@@ -2,13 +2,13 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "墨流 Inkflow｜今日时间计划",
+    name: "墨流 Inkflow｜下一段时间",
     short_name: "墨流",
-    description: "安排任务、开始时间与时长，用清晰计时把今天真正带到行动。",
+    description: "从现在或某个时间开始，留下一段时间，只做一件具体的事。",
     start_url: "/",
     display: "standalone",
-    background_color: "#efede7",
-    theme_color: "#efede7",
+    background_color: "#f4f5f7",
+    theme_color: "#f4f5f7",
     orientation: "any",
     lang: "zh-CN",
     categories: ["lifestyle", "productivity", "health"],

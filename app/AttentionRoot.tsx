@@ -8,18 +8,15 @@ const subscribe = () => () => undefined;
 
 function LoadingShell() {
   return (
-    <div className="attention-app loading-shell" aria-busy="true">
-      <aside className="app-sidebar">
-        <div className="brand-lockup"><span className="brand-mark" aria-hidden="true"><i/><i/><i/></span><strong>墨流</strong></div>
-        <div className="loading-rule"/>
-      </aside>
-      <main className="app-main">
-        <header className="app-header"><span>正在接回今天的计划</span><i/></header>
-        <section className="now-empty">
-          <p className="kicker">此刻 / NOW</p>
-          <h1>今天，<br/>准备从哪一段开始？</h1>
-          <p>正在读取这台设备上的时间安排，并与云端核对。</p>
-        </section>
+    <div className="zero-app zero-loading" aria-busy="true">
+      <header className="zero-topbar">
+        <div className="zero-brand"><span>墨</span><strong>墨流</strong></div>
+        <span className="zero-loading-state">正在接回今天</span>
+      </header>
+      <main className="zero-loading-main">
+        <span>今天</span>
+        <h1>把下一段时间，<br/>交给一件事。</h1>
+        <i/>
       </main>
     </div>
   );
