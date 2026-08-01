@@ -1,7 +1,8 @@
 {
   "name": "inkflow-daily-attention",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
+  "main": "desktop/main.cjs",
   "engines": {
     "node": ">=22.13.0"
   },
@@ -10,8 +11,15 @@
     "build": "vinext build",
     "start": "vinext start",
     "test": "npm run build && node --test",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "db:generate": "drizzle-kit generate"
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern desktop/dist --ignore-pattern release --ignore-pattern .next",
+    "db:generate": "drizzle-kit generate",
+    "desktop:icons": "node desktop/scripts/build-icons.mjs",
+    "desktop:renderer": "vite build --config desktop/vite.config.ts",
+    "desktop:build": "npm run desktop:icons && npm run desktop:renderer",
+    "desktop:dev": "npm run desktop:build && electron .",
+    "desktop:test": "node --test desktop/tests/*.test.mjs",
+    "desktop:pack": "npm run desktop:build && node desktop/scripts/package-unpacked.mjs",
+    "desktop:dist": "npm run desktop:pack && electron-builder --win nsis portable --prepackaged release/win-unpacked"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
@@ -28,9 +36,14 @@
     "@vitejs/plugin-react": "6.0.2",
     "@vitejs/plugin-rsc": "0.5.26",
     "drizzle-kit": "0.31.10",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.6",
+    "png-to-ico": "^3.0.2",
+    "rcedit": "^5.0.2",
     "react-server-dom-webpack": "19.2.6",
+    "sharp": "^0.35.3",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
     "vinext": "0.0.50",
@@ -38,5 +51,39 @@
     "wrangler": "4.92.0"
   },
   "type": "module",
-  "description": "墨流个人版：专注、休息、冥想、饭后用药提醒与晚间回顾。"
+  "description": "墨流个人桌面版：后台专注计时、自动休息、冥想、饭后用药提醒与晚间回顾。",
+  "build": {
+    "appId": "com.inkflow.personal",
+    "productName": "墨流",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "desktop/main.cjs",
+      "desktop/preload.cjs",
+      "desktop/dist/**/*",
+      "desktop/assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "desktop/assets/icon.ico"
+    },
+    "nsis": {
+      "artifactName": "Inkflow-${version}-Setup.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "墨流"
+    },
+    "portable": {
+      "artifactName": "Inkflow-${version}-Portable.${ext}"
+    }
+  }
 }
